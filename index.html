@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeopardy Competition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000074;
+            color: #fed49e;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        
+        .podium-image {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            margin-bottom: 30px;
+            object-fit: contain;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        select, input, button {
+            margin: 10px;
+            padding: 8px 16px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background-color: #fed49e;
+            color: #0440d4;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background-color: #ffc278;
+        }
+        
+        .player-inputs {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .player-input {
+            margin: 10px 0;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .jeopardy-intro {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-top: 30px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .avatar-preview {
+            width: 100px;
+            height: 100px;
+            margin: 10px auto;
+            border: 2px solid #fed49e;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .avatar-preview img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .instructions {
+            background-color: rgba(0, 0, 116, 0.8);
+            border: 2px solid gold;
+            border-radius: 10px;
+            padding: 30px 50px;
+            margin: 20px auto;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        .instructions h2 {
+            color: gold;
+            font-size: 2rem;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .instructions ul {
+            font-size: 1.3rem;
+            line-height: 1.8;
+        }
+
+        .instructions li {
+            margin-bottom: 15px;
+        }
+        
+        .settings-choice {
+            background-color: rgba(0, 0, 116, 0.8);
+            border: 2px solid gold;
+            border-radius: 10px;
+            padding: 20px 40px;
+            margin: 20px auto;
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .settings-choice h3 {
+            color: gold;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+        }
+
+        .settings-button {
+            background-color: #0440d4;
+            color: white;
+            border: 2px solid gold;
+            padding: 12px 24px;
+            margin: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .settings-button:hover {
+            background-color: gold;
+            color: #0440d4;
+        }
+
+        .loading-text {
+            font-family: 'Permanent Marker', cursive;
+            color: gold;
+            font-size: 3rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-top: 30px;
+            display: none;
+            animation: pulse 1.5s infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        #main-content {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="podium alter.png" alt="Jeopardy Podium" class="podium-image">
+        <div class="instructions">
+            <ul style="list-style-type: disc; text-align: left; color: white; padding-left: 20px;">
+                <li>Watch Jeopardy Live on ABC or <a href="https://www.youtube.com/results?search_query=jeopardy" target="_blank" style="color: gold; text-decoration: underline;">YouTube</a> repeat.</li>
+            </ul>
+        </div>
+
+        <div id="settings-choice" class="settings-choice">
+            <h3>Would you like to use your previous settings?</h3>
+            <button id="new-settings" class="settings-button">Enter New Settings</button>
+            <button id="load-settings" class="settings-button">Use Last Settings</button>
+        </div>
+        
+        <div id="main-content" class="hidden">
+            <h1>Welcome to Jeopardy</h1>
+            
+            <div id="player-selection">
+                <p>How many players are playing tonight?</p>
+                <select id="player-count">
+                    <option value="">Select number of players</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                </select>
+            </div>
+            
+            <div id="player-inputs" class="player-inputs hidden">
+                <!-- Player input fields will be added here dynamically -->
+            </div>
+            
+            <button id="finish-button" class="hidden">Click when finished</button>
+            
+            <div id="start-message" class="hidden">
+                <p>Great! Let's get started!</p>
+                <p class="jeopardy-intro">This. Is. Jeopardy!!</p>
+            </div>
+            
+            <div id="avatar-section" class="hidden">
+                <p>Would you like to create avatars for the players?</p>
+                <button id="avatar-yes">Yes</button>
+                <button id="avatar-no">No</button>
+            </div>
+            
+            <div id="avatar-uploads" class="hidden">
+                <!-- Avatar upload fields will be added here dynamically -->
+            </div>
+        </div>
+
+        <div class="loading-text" id="loading-text">Loading Jeopardy!</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const settingsChoice = document.getElementById('settings-choice');
+            const mainContent = document.getElementById('main-content');
+            const loadSettingsBtn = document.getElementById('load-settings');
+            const newSettingsBtn = document.getElementById('new-settings');
+            const playerCountSelect = document.getElementById('player-count');
+            const playerInputsContainer = document.getElementById('player-inputs');
+            const finishButton = document.getElementById('finish-button');
+            const startMessage = document.getElementById('start-message');
+            const avatarSection = document.getElementById('avatar-section');
+            const avatarUploads = document.getElementById('avatar-uploads');
+            const avatarYesBtn = document.getElementById('avatar-yes');
+            const avatarNoBtn = document.getElementById('avatar-no');
+
+            // Check if we have saved preferences when page loads
+            const savedPlayers = JSON.parse(localStorage.getItem('jeopardySavedPlayers') || '[]');
+            const hasSavedSettings = savedPlayers.length > 0;
+
+            // Show/hide load settings button based on whether we have saved settings
+            loadSettingsBtn.style.display = hasSavedSettings ? 'inline-block' : 'none';
+
+            // Handle loading previous settings
+            loadSettingsBtn.addEventListener('click', function() {
+                if (hasSavedSettings) {
+                    // Load saved player names
+                    localStorage.setItem('jeopardyPlayers', JSON.stringify(savedPlayers));
+                    
+                    // Load saved avatars
+                    savedPlayers.forEach((_, index) => {
+                        const playerNum = index + 1;
+                        const savedAvatar = localStorage.getItem(`savedAvatar-${playerNum}`);
+                        if (savedAvatar) {
+                            localStorage.setItem(`avatar-${playerNum}`, savedAvatar);
+                        }
+                    });
+
+                    // Show start message and hide other sections
+                    startMessage.classList.remove('hidden');
+                    settingsChoice.classList.add('hidden');
+                    mainContent.classList.add('hidden');
+
+                    // Redirect to game after delay
+                    setTimeout(function() {
+                        window.location.href = 'game.html';
+                    }, 5000);
+                } else {
+                    alert('No saved settings found. Please enter new settings.');
+                    newSettingsBtn.click();
+                }
+            });
+
+            // Handle new settings
+            newSettingsBtn.addEventListener('click', function() {
+                settingsChoice.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+            });
+
+            // When finish button is clicked (saving new settings)
+            finishButton.addEventListener('click', function() {
+                // Collect player names
+                const count = parseInt(playerCountSelect.value);
+                const players = [];
+                
+                for (let i = 1; i <= count; i++) {
+                    const name = document.getElementById(`player-${i}`).value.trim();
+                    players.push(name || `Player ${i}`);
+                }
+                
+                // Store player names for both current session and saved settings
+                localStorage.setItem('jeopardyPlayers', JSON.stringify(players));
+                localStorage.setItem('jeopardySavedPlayers', JSON.stringify(players));
+                localStorage.setItem('jeopardySavePreferences', 'true');
+                
+                // Show avatar section
+                avatarSection.classList.remove('hidden');
+            });
+
+            // Handle avatar uploads completion
+            function continueToStartMessage() {
+                // Save current avatars as saved avatars
+                const players = JSON.parse(localStorage.getItem('jeopardyPlayers') || '[]');
+                players.forEach((_, index) => {
+                    const playerNum = index + 1;
+                    const currentAvatar = localStorage.getItem(`avatar-${playerNum}`);
+                    if (currentAvatar) {
+                        localStorage.setItem(`savedAvatar-${playerNum}`, currentAvatar);
+                    }
+                });
+
+                // Show start message
+                startMessage.classList.remove('hidden');
+                
+                // Redirect to game board after 5 seconds
+                setTimeout(function() {
+                    window.location.href = 'game.html';
+                }, 5000);
+            }
+
+            // When the number of players is selected
+            playerCountSelect.addEventListener('change', function() {
+                const count = parseInt(this.value);
+                
+                if (count > 0) {
+                    // Clear previous inputs
+                    playerInputsContainer.innerHTML = '';
+                    
+                    // Create input fields for each player
+                    for (let i = 1; i <= count; i++) {
+                        const playerInput = document.createElement('div');
+                        playerInput.className = 'player-input';
+                        
+                        const label = document.createElement('label');
+                        label.textContent = `Player ${i} name: `;
+                        
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.id = `player-${i}`;
+                        input.placeholder = `Enter player ${i} name`;
+                        
+                        playerInput.appendChild(label);
+                        playerInput.appendChild(input);
+                        playerInputsContainer.appendChild(playerInput);
+                    }
+                    
+                    // Show player inputs and finish button
+                    playerInputsContainer.classList.remove('hidden');
+                    finishButton.classList.remove('hidden');
+                }
+            });
+            
+            // Handle avatar choice
+            avatarYesBtn.addEventListener('click', function() {
+                avatarSection.classList.add('hidden');
+                setupAvatarUploads();
+            });
+            
+            avatarNoBtn.addEventListener('click', function() {
+                avatarSection.classList.add('hidden');
+                continueToStartMessage();
+            });
+            
+            function setupAvatarUploads() {
+                // Clear previous inputs
+                avatarUploads.innerHTML = '';
+                
+                // Get player names
+                const players = JSON.parse(localStorage.getItem('jeopardyPlayers') || '[]');
+                
+                // Create upload fields for each player
+                players.forEach((name, index) => {
+                    const playerNum = index + 1;
+                    const avatarDiv = document.createElement('div');
+                    avatarDiv.className = 'avatar-upload';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = `Upload avatar for ${name}: `;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.id = `avatar-${playerNum}`;
+                    input.accept = 'image/*';
+                    
+                    // Preview container
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'avatar-preview';
+                    previewDiv.id = `preview-${playerNum}`;
+                    
+                    // Add event listener for file selection
+                    input.addEventListener('change', function(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                // Store in localStorage
+                                localStorage.setItem(`avatar-${playerNum}`, event.target.result);
+                                
+                                // Update preview
+                                const img = document.createElement('img');
+                                img.src = event.target.result;
+                                previewDiv.innerHTML = '';
+                                previewDiv.appendChild(img);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                    
+                    avatarDiv.appendChild(label);
+                    avatarDiv.appendChild(input);
+                    avatarDiv.appendChild(previewDiv);
+                    avatarUploads.appendChild(avatarDiv);
+                });
+                
+                // Add continue button
+                const continueBtn = document.createElement('button');
+                continueBtn.textContent = 'Continue';
+                continueBtn.addEventListener('click', function() {
+                    avatarUploads.classList.add('hidden');
+                    continueToStartMessage();
+                });
+                
+                avatarUploads.appendChild(continueBtn);
+                avatarUploads.classList.remove('hidden');
+            }
+        });
+
+        function showLoadingAndRedirect(players) {
+            // Hide all content
+            document.querySelector('.container').style.opacity = '0';
+            
+            // Show loading text
+            const loadingText = document.getElementById('loading-text');
+            loadingText.style.display = 'block';
+            
+            // Store player count in localStorage
+            localStorage.setItem('jeopardyPlayers', JSON.stringify(Array(players).fill('Player')));
+
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = 'game.html';
+            }, 2000);
+        }
+
+        function startTwoPlayerGame() {
+            showLoadingAndRedirect(2);
+        }
+
+        function startThreePlayerGame() {
+            showLoadingAndRedirect(3);
+        }
+    </script>
+</body>
+</html> 

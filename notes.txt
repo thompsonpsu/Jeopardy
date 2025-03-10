@@ -1,0 +1,24 @@
+**********To change the position of the buttons to click for answering a question.
+
+/* Position for player 1's value column */
+        #player1-values {
+
+
+**********Change the size of the buttons under that, in the height and width values:
+
+value-tile {
+            position: relative;    /* Add this if you need positioning */
+            top: 0;               /* Add this to adjust vertical position */
+            left: 0;              /* Add this to adjust horizontal position */
+            background-color: #000074;
+            height: 80px;
+            width: 300px;
+
+********** Change the location the The name boxes are located here:
+ /* Name boxes */
+        #player1-name-box {
+            top: 352px;
+            left: 361px;
+
+********** The total boxes are located here:
+	#player1-total-box {

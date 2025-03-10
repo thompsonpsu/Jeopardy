@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeopardy Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000074;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 10px 20px;
+        }
+        
+        .round-display {
+            position: absolute;
+            top: 20px;
+            left: 885px;
+            color: gold;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 3rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        
+        .jeopardy-logo {
+            margin: 0;
+        }
+        
+        .jeopardy-logo img {
+            height: 100px;
+        }
+        
+        .game-controls {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 15px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+        
+        .button {
+            background-color: #0440d4;
+            color: white;
+            border: 2px dashed white;
+            padding: 15px 30px;
+            margin: 10px 0;
+            cursor: pointer;
+            font-size: 1.2rem;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        .main-content {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: relative;
+            min-height: 80vh;
+            padding-bottom: 60px;
+        }
+        
+        /* New layout structure */
+        .game-board-container {
+            width: 100%;
+            height: 100%;
+            background-image: url('podium alter.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        
+        .game-board {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Player info (score and name) positioned absolutely */
+        .player-box {
+            top:1200px;
+            left:220px;
+            width: 157px;     /* Add this */
+            height: 255px;     /* Add this */
+            position: absolute;
+            text-align: center;
+            background-color: #000074;
+            border: 3px solid black;
+            padding: 10px 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Name boxes - all at same top position */
+        #player1-name-box {
+            top: 446px;
+            left: 314px;
+            height: 230px;
+            width: 153px;
+        }
+        
+        #player2-name-box {
+            top: 442px;
+            left: 885px;
+            height: 230px;
+            width: 153px;
+        }
+
+        #player3-name-box {
+            top: 446px;
+            left: 1475px;
+            height: 230px;
+            width: 158px;
+        }
+        
+        /* Player avatars - all at same top position */
+        .player-avatar {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background-color: #000074;
+            overflow: hidden;
+            border: 3px solid black;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        
+        #player1-avatar {
+            top: 150px;
+            left: 305px;
+        }
+        
+        #player2-avatar {
+            top: 150px;
+            left: 880px;
+        }
+
+        #player3-avatar {
+            top: 150px;
+            left: 1475px;
+            width: 200px;
+            height: 200px;
+        }
+        
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Value columns - all at same top position */
+        .value-column {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            background-color: #000074;
+            border: 3px solid black;
+            padding: 0;
+            width: 205px;
+            height: 220px;
+        }
+        
+        #player1-values {
+            top: 500px;
+            left: 314px;
+            width: 192px;
+            height: 200px;
+        }
+        
+        #player2-values {
+            top: 500px;
+            left: 885px;
+            width: 192px;
+            height: 200px;
+        }
+        
+        #player3-values {
+            top: 500px;
+            left: 1471px;
+            width: 194px;
+            height: 200px;
+        }
+        
+        .value-tile {
+            height: 44px;
+            width: 100%;
+            position: relative;
+            background-color: #000074;            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0;
+            border: 1px solid black;
+            font-family: Arial, sans-serif;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .value-tile:hover {
+            background-color: #0000a0;
+            transform: scale(1.05);
+        }
+        
+        .value-tile.completed {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .scoreboard {
+            width: 25%;
+            padding: 20px;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        
+        .player-scoreboard {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .player-column-score {
+            width: 45%;
+        }
+        
+        .current-question {
+            position: absolute;
+            top: 50px;
+            left: 885px;
+            border: 2px solid gold;
+            padding: 20px 40px;
+            text-align: center;
+            font-family: 'Permanent Marker', cursive;
+            color: gold;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 116, 0.9);
+            z-index: 1000;
+            border-radius: 10px;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .current-question.fade-out {
+            opacity: 0;
+        }
+        
+        .host-image {
+            text-align: right;
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table th, table td {
+            padding: 5px;
+            text-align: center;
+        }
+        
+        .avatar-male {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><circle cx="50" cy="40" r="30" fill="%23ffcc99"/><rect x="20" y="70" width="60" height="80" fill="%23333"/><rect x="30" y="70" width="40" height="10" fill="white"/><rect x="45" y="70" width="10" height="50" fill="red"/></svg>');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+        
+        .avatar-female {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><circle cx="50" cy="40" r="30" fill="%23ffcc99"/><path d="M20,70 L80,70 L60,120 L40,120 Z" fill="%23fff"/><rect x="45" y="70" width="10" height="30" fill="gold"/></svg>');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+        
+        /* Add handwritten style fonts */
+        .player-name {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
+        
+        .player-score {
+            font-family: 'Indie Flower', cursive;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        /* Create a new class for player total boxes */
+        .total-box {
+            position: absolute;
+            text-align: center;
+            background-color: #000074;
+            border: 5px solid black;
+            padding: 10px 20px;
+            width: 150px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 15;
+            top: 250px;
+        }
+        
+        #player1-total-box {
+            top: 380px;
+            left: 314px;
+        }
+        
+        #player2-total-box {
+            top: 375px;
+            left: 885px;
+        }
+        
+        #player3-total-box {
+            top: 380px;
+            left: 1475px;
+            width: 152px;
+        }
+        
+        /* Update player-total to be inside the boxes */
+        .player-total {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            /* Remove absolute positioning since it's now inside a container */
+            position: static;
+        }
+        
+        /* Player 3 name box */
+        /* #player3-name-box {
+            top: 350px;
+            left: 870px;
+            height: 30px;
+        } */
+        
+        /* Player 3 total box */
+        /* #player3-total-box {
+            top: 80px;
+            left: 835px;
+        } */
+        
+        /* Player 3 value column */
+        /* #player3-values {
+            top: 410px;
+            left: 867px;
+            width: 180px;
+            height: 235px;
+        } */
+        
+        /* Update three-player mode adjustments */
+        .three-player-mode #player1-values {
+            left: 314px;
+        }
+        
+        .three-player-mode #player2-values {
+            left: 885px;
+        }
+        
+        .three-player-mode #player3-values {
+            left: 1476px;
+        }
+        
+        .three-player-mode #player1-total-box {
+            left: 314px;
+        }
+        
+        .three-player-mode #player2-total-box {
+            left: 885px;
+        }
+        
+        .three-player-mode #player3-total-box {
+            left: 1475px;
+        }
+        
+        /* Additional responsive adjustments for 3 players */
+        @media screen and (max-width: 1200px) {
+            .three-player-mode #player1-values { left: 40px; }
+            .three-player-mode #player2-values { left: 400px; }
+            .three-player-mode #player3-values { left: 760px; }
+        }
+        
+        /* Add a reminder note next to the round selector */
+        .round-reminder {
+            color: yellow;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 10px;
+            animation: blink 2s infinite;
+            text-shadow: 1px 1px 2px black;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Add a label for the totals */
+        .total-box::before {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 5px;
+            color: gold;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+        
+        /* Ensure player 3's scoreboard is properly handled */
+        .scoreboard .player-column-score:nth-child(3) {
+            display: none; /* Hide by default */
+        }
+        
+        /* Show scoreboard for player 3 when in three-player mode */
+        .three-player-mode ~ .scoreboard .player-column-score:nth-child(3) {
+            display: block;
+        }
+        
+        /* Move totals to scoreboard section */
+        .scoreboard-totals {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #000074;
+            border-top: 3px solid gold;
+            padding: 8px 0;
+            text-align: center;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+        }
+        
+        .scoreboard-totals h2 {
+            font-size: 1.5rem;
+            color: gold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin: 0;
+        }
+        
+        .scoreboard-total-row {
+            display: inline-flex;
+            align-items: center;
+            font-size: 1.2rem;
+            margin: 0;
+        }
+        
+        .scoreboard-total-row span:first-child {
+            font-weight: bold;
+            margin-right: 15px;
+            color: white;
+        }
+        
+        .scoreboard-total-row span:last-child {
+            color: gold;
+            font-family: 'Indie Flower', cursive;
+            font-size: 1.8rem;
+        }
+        
+        /* Add this to your CSS section */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 116, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .popup-content {
+            background-color: #000074;
+            border: 3px solid gold;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .popup-message {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            font-family: 'Permanent Marker', cursive;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .popup-button {
+            background-color: gold;
+            color: #000074;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        
+        .popup-button:hover {
+            background-color: #ffd700;
+            transform: scale(1.05);
+        }
+        
+        .popup-input {
+            background-color: white;
+            border: 2px solid gold;
+            padding: 15px;
+            font-size: 1.5rem;
+            width: 80%;
+            margin: 20px auto;
+            display: block;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .popup-input.hidden {
+            display: none;
+        }
+        
+        .winner-text {
+            position: absolute;
+            top: 50px;
+            padding: 10px 30px;
+            text-align: center;
+            font-family: 'Permanent Marker', cursive;
+            color: gold;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 116, 0.9);
+            border: 3px solid gold;
+            border-radius: 10px;
+            z-index: 1000;
+            display: none;
+        }
+
+        #winner-text-1 {
+            left: 305px;
+        }
+
+        #winner-text-2 {
+            left: 880px;
+        }
+
+        #winner-text-3 {
+            left: 1475px;
+        }
+
+        .player-box.winner {
+            background-color: rgba(0, 255, 0, 0.2);
+            border: 3px solid #4CAF50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+        }
+
+        /* Update loading screen styles */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: #000074;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-text {
+            font-family: 'Permanent Marker', cursive;
+            color: gold;
+            font-size: 4rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Add the round completion message container */
+        #round-completion, #final-jeopardy-prompt {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            text-align: center;
+            display: none;
+            padding: 20px;
+            background-color: rgba(0, 0, 116, 0.95);
+            border-top: 3px solid gold;
+            box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #round-completion div, #final-jeopardy-prompt div {
+            color: gold;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+
+        #proceed-round2, #proceed-final {
+            background-color: gold;
+            color: #000074;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.8rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Permanent Marker', cursive;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        #proceed-round2:hover, #proceed-final:hover {
+            transform: scale(1.05);
+            background-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-text">Loading Jeopardy!</div>
+    </div>
+
+    <div class="header">
+        <div class="round-display" id="round-display">Round 1</div>
+        <div class="game-controls">
+            <div class="button" id="start-button">Restart!</div>
+            <div class="button" id="save-button">Save Game</div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="game-board-container">
+            <div class="game-board">
+                <!-- Player 1 Total Box at Top -->
+                <div class="total-box" id="player1-total-box">
+                    <div class="player-total" id="player1-total">$0</div>
+                </div>
+                
+                <!-- Player 2 Total Box at Top -->
+                <div class="total-box" id="player2-total-box">
+                    <div class="player-total" id="player2-total">$0</div>
+                </div>
+                
+                <!-- Player 3 Total Box at Top -->
+                <div class="total-box" id="player3-total-box" style="display: none;">
+                    <div class="player-total" id="player3-total">$0</div>
+                </div>
+                
+                <!-- Player 1 Avatar & Name in Middle -->
+                <div class="player-avatar" id="player1-avatar">
+                    <img src="avatar_player1.png" alt="Player 1">
+                </div>
+                <div class="player-box" id="player1-name-box">
+                    <div class="player-name" id="player1-name">MATT</div>
+                </div>
+                
+                <!-- Player 2 Avatar & Name in Middle -->
+                <div class="player-avatar" id="player2-avatar">
+                    <img src="avatar_player2.png" alt="Player 2">
+                </div>
+                <div class="player-box" id="player2-name-box">
+                    <div class="player-name" id="player2-name">KYLE</div>
+                </div>
+                
+                <!-- Player 3 Avatar & Name in Middle -->
+                <div class="player-avatar" id="player3-avatar" style="display: none;">
+                    <img src="avatar_player3.png" alt="Player 3">
+                </div>
+                <div class="player-box" id="player3-name-box" style="display: none;">
+                    <div class="player-name" id="player3-name">WHATEVER</div>
+                </div>
+                
+                <!-- Player 1 Value Column at Bottom -->
+                <div class="value-column" id="player1-values">
+                    <div class="value-tile" data-player="1" data-value="200">$200</div>
+                    <div class="value-tile" data-player="1" data-value="400">$400</div>
+                    <div class="value-tile" data-player="1" data-value="600">$600</div>
+                    <div class="value-tile" data-player="1" data-value="800">$800</div>
+                    <div class="value-tile" data-player="1" data-value="1000">$1000</div>
+                </div>
+                
+                <!-- Player 2 Value Column at Bottom -->
+                <div class="value-column" id="player2-values">
+                    <div class="value-tile" data-player="2" data-value="200">$200</div>
+                    <div class="value-tile" data-player="2" data-value="400">$400</div>
+                    <div class="value-tile" data-player="2" data-value="600">$600</div>
+                    <div class="value-tile" data-player="2" data-value="800">$800</div>
+                    <div class="value-tile" data-player="2" data-value="1000">$1000</div>
+                </div>
+                
+                <!-- Player 3 Value Column at Bottom -->
+                <div class="value-column" id="player3-values">
+                    <div class="value-tile" data-player="3" data-value="200">$200</div>
+                    <div class="value-tile" data-player="3" data-value="400">$400</div>
+                    <div class="value-tile" data-player="3" data-value="600">$600</div>
+                    <div class="value-tile" data-player="3" data-value="800">$800</div>
+                    <div class="value-tile" data-player="3" data-value="1000">$1000</div>
+                </div>
+            </div>
+            
+            <!-- Add the round completion message container -->
+            <div id="round-completion">
+                <div>That concludes Round 1! Do you want to proceed to Round 2?</div>
+                <button id="proceed-round2">YES!</button>
+            </div>
+        </div>
+        
+        <!-- Add the Final Jeopardy message container -->
+        <div id="final-jeopardy-prompt">
+            <div>Are You Ready for Final Jeopardy?</div>
+            <button id="proceed-final">YES!</button>
+        </div>
+
+        <!-- Add the wagering form container -->
+        <div id="wagering-form" style="display: none; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; background-color: #000074; padding: 30px; border: 3px solid gold; border-radius: 15px;">
+            <div style="color: gold; font-family: 'Permanent Marker', cursive; font-size: 2rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); margin-bottom: 20px;">
+                Enter Your Wager
+            </div>
+            <div id="current-player-name" style="color: white; font-family: 'Permanent Marker', cursive; font-size: 1.5rem; margin-bottom: 10px;"></div>
+            <div id="current-player-total" style="color: gold; font-family: 'Permanent Marker', cursive; font-size: 1.5rem; margin-bottom: 20px;"></div>
+            <input type="number" id="wager-input" style="font-size: 1.5rem; padding: 10px; width: 200px; text-align: center; margin-bottom: 20px;" min="0">
+            <button id="submit-wager" style="background-color: gold; color: #000074; border: none; padding: 15px 40px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; font-family: 'Permanent Marker', cursive; transition: transform 0.2s;">
+                Submit Wager
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
+            
+            // Get the loading screen element
+            const loadingScreen = document.getElementById('loading-screen');
+            
+            // Ensure the loading screen is visible initially
+            loadingScreen.style.display = 'flex';
+            loadingScreen.style.opacity = '1';
+            
+            // Hide loading screen after a delay
+            setTimeout(() => {
+                loadingScreen.classList.add('fade-out');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                    
+                    // Create a map to track clicks for each value
+                    window.valueClickCounts = {
+                        200: 0,
+                        400: 0,
+                        600: 0,
+                        800: 0,
+                        1000: 0
+                    };
+                    
+                    setupValueTileHandlers();
+                    setupRound2Button();
+                }, 500);
+            }, 2000);
+            
+            // Get player names from localStorage
+            const players = JSON.parse(localStorage.getItem('jeopardyPlayers') || '[]');
+            const savedPlayers = JSON.parse(localStorage.getItem('jeopardySavedPlayers') || '[]');
+            
+            // Use either the current players or saved players
+            const playerNames = players.length > 0 ? players : savedPlayers;
+            
+            // Check if we have 3 players
+            const isThreePlayerMode = playerNames.length >= 3;
+            
+            if (isThreePlayerMode) {
+                // Show player 3 elements
+                document.getElementById('player3-avatar').style.display = 'block';
+                document.getElementById('player3-name-box').style.display = 'block';
+                document.getElementById('player3-total-box').style.display = 'block';
+                document.getElementById('player3-values').style.display = 'flex';
+                
+                // Add three-player-mode class to the game board
+                document.querySelector('.game-board').classList.add('three-player-mode');
+            } else {
+                document.getElementById('player3-avatar').style.display = 'none';
+                document.getElementById('player3-name-box').style.display = 'none';
+                document.getElementById('player3-total-box').style.display = 'none';
+                document.getElementById('player3-values').style.display = 'none';
+                
+                // Remove three-player-mode class from the game board
+                document.querySelector('.game-board').classList.remove('three-player-mode');
+            }
+            
+            // Update player names in the game
+            if (playerNames.length >= 1) {
+                const name1 = playerNames[0].toUpperCase();
+                document.getElementById('player1-name').textContent = name1;
+            }
+            
+            if (playerNames.length >= 2) {
+                const name2 = playerNames[1].toUpperCase();
+                document.getElementById('player2-name').textContent = name2;
+            }
+            
+            if (playerNames.length >= 3) {
+                const name3 = playerNames[2].toUpperCase();
+                document.getElementById('player3-name').textContent = name3;
+            }
+            
+            // Load player avatars for all players
+            for (let i = 1; i <= 3; i++) {
+                if (i <= players.length) {
+                    const avatarImg = document.querySelector(`#player${i}-avatar img`);
+                    const savedAvatar = localStorage.getItem(`avatar-${i}`);
+                    
+                    if (savedAvatar) {
+                        avatarImg.src = savedAvatar;
+                    }
+                }
+            }
+            
+            // Handle game buttons
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Additional functionality would be implemented here
+                });
+            });
+            
+            // Update the Start Game button to redirect to index.html
+            const startButton = document.getElementById('start-button');
+            startButton.addEventListener('click', function() {
+                window.location.href = 'index.html';
+            });
+            
+            // Remove What is Germany question
+            const questionElement = document.querySelector('.current-question');
+            if (questionElement) {
+                questionElement.style.display = 'none';
+            }
+            
+            // Add this to your existing JavaScript
+            const roundSelector = document.getElementById('round-selector');
+            
+            // Listen for round changes
+            roundSelector.addEventListener('change', function() {
+                const round = parseInt(this.value);
+                
+                // Update tile values based on round
+                const valueTiles = document.querySelectorAll('.value-tile');
+                
+                if (round === 1) {
+                    // Round 1 values
+                    const values = ['$200', '$400', '$600', '$800', '$1000'];
+                    updateTileValues(valueTiles, values);
+                } else if (round === 2) {
+                    // Round 2 values - doubled
+                    const values = ['$400', '$800', '$1200', '$1600', '$2000'];
+                    updateTileValues(valueTiles, values);
+                }
+                
+                // Reset all tiles for the new round
+                valueTiles.forEach(tile => {
+                    tile.style.visibility = 'visible';
+                    tile.style.opacity = '1';
+                    tile.classList.remove('completed');
+                });
+                
+                // Reset visibility of value columns
+                for (let playerIndex = 1; playerIndex <= 3; playerIndex++) {
+                    const valueColumn = document.getElementById(`player${playerIndex}-values`);
+                    if (valueColumn) {
+                        valueColumn.style.display = isThreePlayerMode || playerIndex < 3 ? 'flex' : 'none';
+                    }
+                }
+            });
+            
+            function setupValueTileHandlers() {
+                // Set up value tile click handlers
+                console.log('Setting up value tile click handlers');
+                const valueTiles = document.querySelectorAll('.value-tile');
+                console.log('Found value tiles:', valueTiles.length);
+                
+                valueTiles.forEach(tile => {
+                    // Remove existing click handlers
+                    tile.replaceWith(tile.cloneNode(true));
+                });
+
+                // Re-query tiles after replacing them
+                const newValueTiles = document.querySelectorAll('.value-tile');
+                newValueTiles.forEach(tile => {
+                    console.log('Adding click handler to tile:', tile.textContent);
+                    tile.addEventListener('click', function(event) {
+                        console.log('Tile clicked!', this.textContent);
+                        
+                        if (this.classList.contains('completed')) {
+                            console.log('Tile already completed, skipping');
+                            return;
+                        }
+                        
+                        // Get the value from the tile's text content and player number
+                        const valueText = this.textContent;
+                        const value = parseInt(valueText.replace(/[$,]/g, ''));
+                        const playerIndex = this.getAttribute('data-player');
+                        console.log('Processing click:', { valueText, value, playerIndex });
+                        
+                        // Get the total element for this player
+                        const totalElement = document.getElementById(`player${playerIndex}-total`);
+                        console.log('Total element:', totalElement);
+                        
+                        if (!totalElement) {
+                            console.error(`Could not find total element for player ${playerIndex}`);
+                            return;
+                        }
+                        
+                        // Get current total (remove $ and commas)
+                        const currentTotal = parseInt(totalElement.textContent.replace(/[$,]/g, '')) || 0;
+                        console.log('Current total:', currentTotal);
+                        
+                        // Add the value to the total
+                        const newTotal = currentTotal + value;
+                        console.log('New total:', newTotal);
+                        
+                        // Update the total display with proper formatting
+                        totalElement.textContent = `$${newTotal.toLocaleString()}`;
+                        
+                        // Increment click count for this value
+                        window.valueClickCounts[value]++;
+                        console.log(`Click count for $${value}: ${window.valueClickCounts[value]}`);
+                        
+                        // If this value has been clicked 5 times, mark all tiles with this value as completed
+                        if (window.valueClickCounts[value] >= 5) {
+                            console.log(`$${value} has been clicked 5 times, completing all tiles`);
+                            const sameTiles = document.querySelectorAll(`.value-tile[data-value="${value}"]`);
+                            sameTiles.forEach(tile => {
+                                tile.classList.add('completed');
+                                tile.style.visibility = 'hidden';
+                            });
+                        }
+                        
+                        // Check if any columns should be removed
+                        checkAndRemoveEmptyColumns();
+                    });
+                    
+                    // Make sure the tile is clickable by adding cursor pointer
+                    tile.style.cursor = 'pointer';
+                });
+            }
+
+            function setupRound2Button() {
+                // Set up the proceed to Round 2 button handler
+                const proceedButton = document.getElementById('proceed-round2');
+                // Remove existing click handlers
+                proceedButton.replaceWith(proceedButton.cloneNode(true));
+                
+                // Add new click handler to the new button
+                document.getElementById('proceed-round2').addEventListener('click', function() {
+                    console.log('Proceeding to Round 2');
+                    
+                    // Hide the completion message
+                    const roundCompletion = document.getElementById('round-completion');
+                    roundCompletion.style.display = 'none';
+                    
+                    // Update round display
+                    const roundDisplay = document.getElementById('round-display');
+                    roundDisplay.textContent = 'Round 2';
+                    
+                    // Reset click counts for Round 2 with new values
+                    window.valueClickCounts = {
+                        400: 0,
+                        800: 0,
+                        1200: 0,
+                        1600: 0,
+                        2000: 0
+                    };
+                    
+                    // Define Round 2 values
+                    const round2Values = ['$400', '$800', '$1200', '$1600', '$2000'];
+                    
+                    // Reset all value columns first
+                    const valueColumns = document.querySelectorAll('.value-column');
+                    valueColumns.forEach(column => {
+                        if (column.id === 'player3-values') {
+                            column.style.display = isThreePlayerMode ? 'flex' : 'none';
+                        } else {
+                            column.style.display = 'flex';
+                        }
+                    });
+                    
+                    // Update all tiles
+                    updateTileValues(round2Values);
+                    
+                    // Re-setup click handlers for the new values
+                    setupValueTileHandlers();
+                });
+            }
+
+            function updateTileValues(values) {
+                console.log('Updating tile values:', values);
+                
+                // Update each player's tiles
+                for (let playerIndex = 1; playerIndex <= 3; playerIndex++) {
+                    const playerTiles = document.querySelectorAll(`.value-tile[data-player="${playerIndex}"]`);
+                    playerTiles.forEach((tile, index) => {
+                        if (tile && values[index]) {
+                            const value = values[index];
+                            console.log(`Updating tile for player ${playerIndex}: ${tile.textContent} -> ${value}`);
+                            tile.textContent = value;
+                            tile.setAttribute('data-value', value.replace(/[$,]/g, ''));
+                            tile.classList.remove('completed');
+                            tile.style.visibility = 'visible';
+                            tile.style.opacity = '1';
+                            tile.style.display = 'flex';
+                        }
+                    });
+                }
+            }
+
+            function checkAndRemoveEmptyColumns() {
+                // Check for each player if all their tiles are completed
+                let allColumnsEmpty = true;
+                
+                for (let playerIndex = 1; playerIndex <= 3; playerIndex++) {
+                    const playerTiles = document.querySelectorAll(`.value-tile[data-player="${playerIndex}"]`);
+                    
+                    // Check if all tiles are completed for this player
+                    let allCompleted = true;
+                    playerTiles.forEach(tile => {
+                        if (!tile.classList.contains('completed')) {
+                            allCompleted = false;
+                            allColumnsEmpty = false;
+                        }
+                    });
+                    
+                    // If all tiles are completed, hide the column
+                    if (allCompleted && playerTiles.length > 0) {
+                        const valueColumn = document.getElementById(`player${playerIndex}-values`);
+                        if (valueColumn) {
+                            valueColumn.style.display = 'none';
+                        }
+                    }
+                }
+                
+                // If all columns are empty, show appropriate round completion message
+                if (allColumnsEmpty) {
+                    const roundDisplay = document.getElementById('round-display');
+                    const currentRound = roundDisplay.textContent === 'Round 1' ? 1 : 2;
+                    
+                    if (currentRound === 1) {
+                        // Show the Round 2 message
+                        const roundCompletion = document.getElementById('round-completion');
+                        roundCompletion.style.display = 'block';
+                    } else if (currentRound === 2) {
+                        // Check for disqualified players before Final Jeopardy
+                        checkDisqualifiedPlayers();
+                    }
+                }
+            }
+
+            function checkDisqualifiedPlayers() {
+                const qualifiedPlayers = [];
+                
+                // First gather all qualified players
+                for (let i = 1; i <= players.length; i++) {
+                    const totalElement = document.getElementById(`player${i}-total`);
+                    const playerName = document.getElementById(`player${i}-name`).textContent;
+                    const total = parseInt(totalElement.textContent.replace(/[$,]/g, '')) || 0;
+                    
+                    if (total <= 0) {
+                        totalElement.textContent = '$0';
+                    } else {
+                        qualifiedPlayers.push({ name: playerName, index: i, total: total });
+                    }
+                }
+
+                // Create qualification message showing only qualified players
+                const qualificationDiv = document.createElement('div');
+                qualificationDiv.style.cssText = `
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    z-index: 1000;
+                    text-align: center;
+                    padding: 20px;
+                    background-color: rgba(0, 0, 116, 0.95);
+                    border-top: 3px solid gold;
+                    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.3);
+                `;
+
+                let messageHTML = `
+                    <div style="color: gold; font-family: 'Permanent Marker', cursive; font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); margin-bottom: 20px;">
+                        Only the following players qualify for Final Jeopardy:
+                    </div>
+                    <div style="color: white; font-family: 'Permanent Marker', cursive; font-size: 2rem; margin-bottom: 30px;">
+                `;
+
+                qualifiedPlayers.forEach(player => {
+                    messageHTML += `
+                        <div style="margin: 10px 0;">${player.name} - Current Total: $${player.total.toLocaleString()}</div>
+                    `;
+                });
+
+                messageHTML += `
+                    </div>
+                    <button id="continue-final-jeopardy" 
+                            style="background-color: gold; color: #000074; border: none; padding: 15px 40px; font-size: 1.8rem; border-radius: 10px; cursor: pointer; font-family: 'Permanent Marker', cursive; transition: all 0.3s ease; margin-bottom: 10px;">
+                        Continue to Final Jeopardy
+                    </button>
+                `;
+
+                qualificationDiv.innerHTML = messageHTML;
+                document.body.appendChild(qualificationDiv);
+
+                // Add click handler for the continue button
+                document.getElementById('continue-final-jeopardy').addEventListener('click', function() {
+                    // Remove the qualification message
+                    qualificationDiv.remove();
+                    
+                    // Update round display
+                    document.getElementById('round-display').textContent = 'Final Jeopardy';
+                    
+                    // Start the wagering process
+                    startWagering(qualifiedPlayers.map(player => player.index));
+                });
+            }
+
+            function proceedToFinalJeopardy(qualifiedPlayers) {
+                if (qualifiedPlayers.length > 0) {
+                    const finalJeopardyPrompt = document.getElementById('final-jeopardy-prompt');
+                    finalJeopardyPrompt.style.display = 'block';
+
+                    // Remove any existing click handlers
+                    const proceedFinalButton = document.getElementById('proceed-final');
+                    const newProceedButton = proceedFinalButton.cloneNode(true);
+                    proceedFinalButton.parentNode.replaceChild(newProceedButton, proceedFinalButton);
+
+                    // Add new click handler
+                    newProceedButton.addEventListener('click', function() {
+                        // Hide the prompt
+                        finalJeopardyPrompt.style.display = 'none';
+                        
+                        // Update round display
+                        document.getElementById('round-display').textContent = 'Final Jeopardy';
+
+                        // Start wagering process
+                        startWagering(qualifiedPlayers);
+                    });
+                } else {
+                    // If no players qualified, end the game
+                    findWinner();
+                }
+            }
+
+            function startWagering(qualifiedPlayers) {
+                console.log('Starting wagering process for qualified players:', qualifiedPlayers);
+                const wageringForm = document.getElementById('wagering-form');
+                const playerNameDisplay = document.getElementById('current-player-name');
+                const playerTotalDisplay = document.getElementById('current-player-total');
+                const wagerInput = document.getElementById('wager-input');
+                const submitWagerButton = document.getElementById('submit-wager');
+                
+                // Store wagers
+                window.finalWagers = {};
+                let currentPlayerIndex = 0;
+                
+                function processNextPlayer() {
+                    if (currentPlayerIndex >= qualifiedPlayers.length) {
+                        // All qualified players have wagered
+                        wageringForm.style.display = 'none';
+                        // Start the answer verification process
+                        startAnswerVerification(qualifiedPlayers);
+                        return;
+                    }
+                    
+                    const playerNum = qualifiedPlayers[currentPlayerIndex];
+                    const playerName = document.getElementById(`player${playerNum}-name`).textContent;
+                    const playerTotal = parseInt(document.getElementById(`player${playerNum}-total`).textContent.replace(/[$,]/g, '')) || 0;
+                    
+                    console.log('Processing player:', playerName, 'with total:', playerTotal);
+                    
+                    playerNameDisplay.textContent = playerName;
+                    playerTotalDisplay.textContent = `Current Total: $${playerTotal.toLocaleString()}`;
+                    wagerInput.max = playerTotal;
+                    wagerInput.min = 0;
+                    wagerInput.value = '';
+                    wageringForm.style.display = 'block';
+                }
+                
+                // Remove any existing click handlers
+                const newSubmitButton = submitWagerButton.cloneNode(true);
+                submitWagerButton.parentNode.replaceChild(newSubmitButton, submitWagerButton);
+                
+                // Add new click handler
+                newSubmitButton.addEventListener('click', function() {
+                    const wager = parseInt(wagerInput.value);
+                    const playerNum = qualifiedPlayers[currentPlayerIndex];
+                    const playerTotal = parseInt(document.getElementById(`player${playerNum}-total`).textContent.replace(/[$,]/g, '')) || 0;
+                    
+                    if (isNaN(wager) || wager < 0 || wager > playerTotal) {
+                        alert(`Please enter a valid wager between $0 and $${playerTotal.toLocaleString()}`);
+                        return;
+                    }
+                    
+                    console.log('Wager submitted:', wager, 'for player index:', currentPlayerIndex);
+                    
+                    // Store the wager
+                    window.finalWagers[playerNum] = wager;
+                    
+                    // Move to next player
+                    currentPlayerIndex++;
+                    processNextPlayer();
+                });
+                
+                // Start with the first player
+                processNextPlayer();
+            }
+
+            function startAnswerVerification(qualifiedPlayers) {
+                let currentPlayerIndex = 0;
+
+                function processNextPlayerAnswer() {
+                    if (currentPlayerIndex >= qualifiedPlayers.length) {
+                        // All players have been processed, show final results
+                        findWinner();
+                        return;
+                    }
+
+                    const playerNum = qualifiedPlayers[currentPlayerIndex];
+                    const playerName = document.getElementById(`player${playerNum}-name`).textContent;
+                    const promptDiv = createAnswerPrompt(playerName);
+                    document.body.appendChild(promptDiv);
+
+                    // Add click handlers for the answer buttons
+                    promptDiv.querySelectorAll('.answer-button').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const isCorrect = this.getAttribute('data-answer') === 'yes';
+                            const wager = window.finalWagers[playerNum];
+                            const totalElement = document.getElementById(`player${playerNum}-total`);
+                            const currentTotal = parseInt(totalElement.textContent.replace(/[$,]/g, '')) || 0;
+
+                            // Update player's total based on their answer
+                            const newTotal = isCorrect ? currentTotal + wager : currentTotal - wager;
+                            totalElement.textContent = `$${newTotal.toLocaleString()}`;
+
+                            // Remove the prompt
+                            promptDiv.remove();
+
+                            // Move to next player
+                            currentPlayerIndex++;
+                            processNextPlayerAnswer();
+                        });
+                    });
+                }
+
+                // Start with the first player
+                processNextPlayerAnswer();
+            }
+
+            function createAnswerPrompt(playerName) {
+                const promptDiv = document.createElement('div');
+                promptDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #000074;
+                    border: 3px solid gold;
+                    border-radius: 15px;
+                    padding: 30px;
+                    text-align: center;
+                    z-index: 1000;
+                `;
+
+                promptDiv.innerHTML = `
+                    <div style="color: gold; font-family: 'Permanent Marker', cursive; font-size: 2rem; margin-bottom: 20px;">
+                        Did ${playerName} answer correctly?
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 20px;">
+                        <button class="answer-button" data-answer="yes" style="background-color: gold; color: #000074; border: none; padding: 15px 40px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; font-family: 'Permanent Marker', cursive;">Yes</button>
+                        <button class="answer-button" data-answer="no" style="background-color: gold; color: #000074; border: none; padding: 15px 40px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; font-family: 'Permanent Marker', cursive;">No</button>
+                    </div>
+                `;
+
+                return promptDiv;
+            }
+
+            function findWinner() {
+                let maxTotal = -Infinity;
+                let winnerIndex = -1;
+                let winnerName = '';
+                let allResults = [];
+
+                // Check each player's total
+                for (let i = 1; i <= players.length; i++) {
+                    const totalElement = document.getElementById(`player${i}-total`);
+                    const total = parseInt(totalElement.textContent.replace(/[$,]/g, '')) || 0;
+                    const name = document.getElementById(`player${i}-name`).textContent;
+                    allResults.push({ name, total });
+                    
+                    if (total > maxTotal) {
+                        maxTotal = total;
+                        winnerIndex = i;
+                        winnerName = name;
+                    }
+                }
+
+                // Create winner announcement
+                const winnerDiv = document.createElement('div');
+                winnerDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #000074;
+                    border: 3px solid gold;
+                    border-radius: 15px;
+                    padding: 40px;
+                    text-align: center;
+                    z-index: 1000;
+                    animation: fadeIn 1s ease-in;
+                `;
+
+                winnerDiv.innerHTML = `
+                    <div style="color: gold; font-family: 'Permanent Marker', cursive; font-size: 3rem; margin-bottom: 20px;">
+                        The Winner is!
+                    </div>
+                    <div style="color: white; font-family: 'Permanent Marker', cursive; font-size: 4rem; margin: 30px 0;">
+                        ${winnerName}
+                    </div>
+                    <div style="color: gold; font-family: 'Permanent Marker', cursive; font-size: 2.5rem; margin-top: 20px; margin-bottom: 30px;">
+                        $${maxTotal.toLocaleString()}
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 20px;">
+                        <button onclick="showDetailedResults(${JSON.stringify(allResults).replace(/"/g, '&quot;')})" style="background-color: gold; color: #000074; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; font-family: 'Permanent Marker', cursive; transition: all 0.3s ease;">View Results</button>
+                        <button onclick="this.parentElement.parentElement.remove()" style="background-color: gold; color: #000074; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; font-family: 'Permanent Marker', cursive; transition: all 0.3s ease;">Close</button>
+                    </div>
+                `;
+
+                // Add winner highlight effect
+                const winnerBox = document.getElementById(`player${winnerIndex}-name-box`);
+                winnerBox.classList.add('winner');
+
+                document.body.appendChild(winnerDiv);
+            }
+
+            function showDetailedResults(results) {
+                // Sort results by total in descending order
+                results.sort((a, b) => b.total - a.total);
+
+                const detailsDiv = document.createElement('div');
+                detailsDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #000074;
+                    border: 3px solid gold;
+                    border-radius: 15px;
+                    padding: 40px;
+                    text-align: center;
+                    z-index: 1001;
+                    min-width: 400px;
+                `;
+
+                let resultsHTML = `
+                    <div style="color: gold; font-family: 'Permanent Marker', cursive; font-size: 2.5rem; margin-bottom: 30px;">
+                        Final Results
+                    </div>
+                    <div style="margin-bottom: 30px;">
+                `;
+
+                results.forEach((player, index) => {
+                    resultsHTML += `
+                        <div style="color: white; font-family: 'Permanent Marker', cursive; font-size: 1.8rem; margin: 15px 0; display: flex; justify-content: space-between; align-items: center;">
+                            <span>${index + 1}. ${player.name}</span>
+                            <span style="color: gold;">$${player.total.toLocaleString()}</span>
+                        </div>
+                    `;
+                });
+
+                resultsHTML += `
+                    </div>
+                    <button onclick="this.parentElement.remove()" style="background-color: gold; color: #000074; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; font-family: 'Permanent Marker', cursive; transition: all 0.3s ease;">Close</button>
+                `;
+
+                detailsDiv.innerHTML = resultsHTML;
+                document.body.appendChild(detailsDiv);
+            }
+        });
+    </script>
+</body>
+</html>
