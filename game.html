@@ -580,35 +580,6 @@
             box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
         }
 
-        /* Update loading screen styles */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background-color: #000074;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            opacity: 1;
-            transition: opacity 0.5s ease-out;
-        }
-
-        .loading-screen.fade-out {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loading-text {
-            font-family: 'Permanent Marker', cursive;
-            color: gold;
-            font-size: 4rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            animation: pulse 1.5s infinite;
-        }
-
         /* Add the round completion message container */
         #round-completion, #final-jeopardy-prompt {
             position: fixed;
@@ -653,10 +624,6 @@
     </style>
 </head>
 <body>
-    <div class="loading-screen" id="loading-screen">
-        <div class="loading-text">Loading Jeopardy!</div>
-    </div>
-
     <div class="header">
         <div class="round-display" id="round-display">Round 1</div>
         <div class="game-controls">
@@ -764,34 +731,17 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded');
+            // Create a map to track clicks for each value
+            window.valueClickCounts = {
+                200: 0,
+                400: 0,
+                600: 0,
+                800: 0,
+                1000: 0
+            };
             
-            // Get the loading screen element
-            const loadingScreen = document.getElementById('loading-screen');
-            
-            // Ensure the loading screen is visible initially
-            loadingScreen.style.display = 'flex';
-            loadingScreen.style.opacity = '1';
-            
-            // Hide loading screen after a delay
-            setTimeout(() => {
-                loadingScreen.classList.add('fade-out');
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                    
-                    // Create a map to track clicks for each value
-                    window.valueClickCounts = {
-                        200: 0,
-                        400: 0,
-                        600: 0,
-                        800: 0,
-                        1000: 0
-                    };
-                    
-                    setupValueTileHandlers();
-                    setupRound2Button();
-                }, 500);
-            }, 2000);
+            setupValueTileHandlers();
+            setupRound2Button();
             
             // Get player names from localStorage
             const players = JSON.parse(localStorage.getItem('jeopardyPlayers') || '[]');
