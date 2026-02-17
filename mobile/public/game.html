@@ -1,0 +1,1664 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Jeopardy! Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        background: #060ce9;
+        color: #fff;
+        font-family: Arial, Helvetica, sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      /* ---- Game background by player count (shown when game is playing) ---- */
+      .podium-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        pointer-events: none;
+      }
+      .podium-bg-1p {
+        background-image: url("/background1p.jpg");
+      }
+      .podium-bg-2p {
+        background-image: url("/background2p.jpg");
+      }
+      .podium-bg-3p {
+        background-image: url("/background3p.jpg");
+      }
+      /* Ensure all game UI sits above the podium background */
+      .game-content-layer {
+        position: relative;
+        z-index: 1;
+      }
+      .game-content-layer.board-view {
+        padding-bottom: 26vh;
+      }
+
+      /* ---- Top Bar ---- */
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #000050;
+        border-bottom: 2px solid #ffd700;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .top-bar .round-info,
+      #round-info {
+        font-family: "Permanent Marker", cursive;
+        font-size: 35px;
+        color: #ffd700;
+        height: 50px;
+        padding-left: 43px;
+        padding-right: 43px;
+        text-align: center;
+        vertical-align: middle;
+      }
+      .top-bar .room-code {
+        font-size: 0.85rem;
+        color: #ccc;
+        letter-spacing: 2px;
+      }
+      .top-bar .menu-dots {
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 4px 8px;
+        color: #ffd700;
+      }
+
+      /* ---- Menu Dropdown ---- */
+      .menu-dropdown {
+        display: none;
+        position: absolute;
+        top: 44px;
+        right: 8px;
+        background: #000050;
+        border: 2px solid #ffd700;
+        border-radius: 10px;
+        z-index: 200;
+        min-width: 200px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      }
+      .menu-dropdown.open {
+        display: block;
+      }
+      .menu-dropdown button {
+        display: block;
+        width: 100%;
+        padding: 14px 18px;
+        background: none;
+        border: none;
+        border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        color: #fff;
+        font-size: 1rem;
+        text-align: left;
+        cursor: pointer;
+      }
+      .menu-dropdown button:last-child {
+        border-bottom: none;
+      }
+      .menu-dropdown button:active {
+        background: rgba(255, 215, 0, 0.15);
+      }
+
+      /* ---- Category Setup ---- */
+      .category-setup {
+        padding: 12px 16px;
+        text-align: center;
+      }
+      .category-setup h2 {
+        font-family: "Permanent Marker", cursive;
+        color: #ffd700;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+      }
+      .cat-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .cat-inputs input {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+        border: 2px solid rgba(255, 215, 0, 0.5);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #000;
+        text-align: center;
+        outline: none;
+        width: 100%;
+        min-width: 0;
+      }
+      .cat-inputs input:focus {
+        border-color: #ffd700;
+      }
+      .cat-inputs input::placeholder {
+        color: #999;
+        font-size: 0.85rem;
+      }
+      .btn-gold {
+        padding: 14px 32px;
+        background: #ffd700;
+        color: #000074;
+        border: none;
+        border-radius: 10px;
+        font-family: "Permanent Marker", cursive;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: transform 0.1s;
+      }
+      .btn-gold:active {
+        transform: scale(0.96);
+      }
+
+      /* ---- Game Board ---- */
+      .board-container {
+        padding: 6px;
+        overflow-x: auto;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 3px;
+        min-width: 340px;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+      .board .cat-cell {
+        background: #000074;
+        border: 2px solid #ffd700;
+        padding: 6px 2px;
+        text-align: center;
+        font-family: "Permanent Marker", cursive;
+        font-size: 0.65rem;
+        color: #fff;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        word-break: break-word;
+        line-height: 1.2;
+      }
+      .board .clue-cell {
+        background: #060ce9;
+        border: 2px solid #ffd700;
+        padding: 8px 2px;
+        text-align: center;
+        font-size: 0.95rem;
+        font-weight: bold;
+        color: #ffd700;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .board .clue-cell:active {
+        transform: scale(0.94);
+        background: #0808ff;
+      }
+      .board .clue-cell.used {
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .board .clue-cell.claiming {
+        background: #ffd700;
+        color: #000074;
+        animation: claimFlash 0.4s;
+      }
+      @keyframes claimFlash {
+        0% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      /* ---- Scoreboard on podium ---- */
+      .podium-scoreboard-wrap {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 22vh;
+        min-height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5vh 4% 2vh 4%;
+        pointer-events: none;
+        z-index: 50;
+      }
+      .podium-names-row,
+      .podium-scores-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4vw;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        max-width: 96%;
+        padding: 0;
+      }
+      .podium-names-row.scoreboard-1p,
+      .podium-scores-row.scoreboard-1p {
+        justify-content: center;
+      }
+      .podium-names-row.scoreboard-2p,
+      .podium-scores-row.scoreboard-2p {
+        justify-content: space-evenly;
+      }
+      .podium-names-row.scoreboard-3p,
+      .podium-scores-row.scoreboard-3p {
+        justify-content: space-between;
+      }
+      .podium-name-chip {
+        background: rgba(0, 0, 50, 0.6);
+        border: 2px solid #ffd700;
+        border-radius: 8px;
+        padding: 6px 14px;
+        text-align: center;
+        min-width: 64px;
+        max-width: 28vw;
+        flex: 0 1 auto;
+        pointer-events: auto;
+      }
+      .podium-name-chip .s-name {
+        font-size: 0.9rem;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .podium-name-chip.me {
+        border-color: #ffd700;
+        box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.5);
+      }
+      .podium-score-chip {
+        background: rgba(0, 0, 50, 0.75);
+        border: 2px solid #ffd700;
+        border-radius: 8px;
+        padding: 8px 16px;
+        text-align: center;
+        min-width: 72px;
+        max-width: 28vw;
+        flex: 0 1 auto;
+        pointer-events: auto;
+      }
+      .podium-score-chip .s-score {
+        font-family: "Permanent Marker", cursive;
+        font-size: 1.2rem;
+        color: #ffd700;
+      }
+      .podium-score-chip.me {
+        border-color: #ffd700;
+        box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.5);
+      }
+
+      /* ---- Modal Overlay ---- */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 50, 0.92);
+        z-index: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .modal-overlay.hidden {
+        display: none;
+      }
+      .modal {
+        background: #000074;
+        border: 3px solid #ffd700;
+        border-radius: 16px;
+        padding: 24px 20px;
+        width: 100%;
+        max-width: 400px;
+        max-height: 90vh;
+        overflow-y: auto;
+        text-align: center;
+      }
+      .modal h3 {
+        font-family: "Permanent Marker", cursive;
+        color: #ffd700;
+        font-size: 1.3rem;
+        margin-bottom: 8px;
+      }
+      .modal .modal-sub {
+        color: #ccc;
+        margin-bottom: 18px;
+        font-size: 0.95rem;
+      }
+      .modal .player-btn {
+        display: block;
+        width: 100%;
+        padding: 14px;
+        margin: 6px 0;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border: 2px solid #ffd700;
+        border-radius: 10px;
+        background: rgba(255, 215, 0, 0.1);
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .modal .player-btn:active {
+        background: #ffd700;
+        color: #000074;
+      }
+      .modal .nobody-btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0 0;
+        font-size: 0.95rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #aaa;
+        cursor: pointer;
+      }
+      .modal .nobody-btn:active {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .modal .dd-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin: 12px 0 16px;
+        padding: 10px;
+        background: rgba(255, 215, 0, 0.08);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .modal .dd-toggle input {
+        width: 20px;
+        height: 20px;
+        accent-color: #ffd700;
+      }
+      .modal .dd-toggle label {
+        color: #ffd700;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .modal .dd-section {
+        margin-top: 12px;
+      }
+      .modal .dd-section label {
+        color: #ccc;
+        font-size: 0.9rem;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .modal .dd-section select,
+      .modal .dd-section input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.1rem;
+        border: 2px solid #ffd700;
+        border-radius: 8px;
+        background: #fff;
+        color: #000;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .modal .dd-btns {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .modal .dd-btns button {
+        flex: 1;
+        padding: 14px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .modal .btn-correct {
+        background: #4caf50;
+        color: #fff;
+      }
+      .modal .btn-incorrect {
+        background: #f44336;
+        color: #fff;
+      }
+
+      /* ---- Round Complete Overlay ---- */
+      .round-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 50, 0.95);
+        z-index: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .round-overlay.hidden {
+        display: none;
+      }
+      .round-overlay h2 {
+        font-family: "Permanent Marker", cursive;
+        color: #ffd700;
+        font-size: 2rem;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .round-overlay .standings {
+        width: 100%;
+        max-width: 360px;
+        margin-bottom: 24px;
+      }
+      .round-overlay .standing-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 16px;
+        margin: 4px 0;
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 8px;
+      }
+      .round-overlay .standing-row .st-name {
+        color: #fff;
+        font-weight: bold;
+      }
+      .round-overlay .standing-row .st-score {
+        color: #ffd700;
+        font-family: "Permanent Marker", cursive;
+      }
+
+      /* ---- Final Jeopardy ---- */
+      .fj-container {
+        padding: 20px;
+        text-align: center;
+      }
+      .fj-container h2 {
+        font-family: "Permanent Marker", cursive;
+        color: #ffd700;
+        font-size: 1.6rem;
+        margin-bottom: 6px;
+      }
+      .fj-container .fj-sub {
+        color: #ccc;
+        margin-bottom: 16px;
+      }
+      .fj-wager-form {
+        max-width: 360px;
+        margin: 0 auto;
+      }
+      .fj-wager-form label {
+        color: #ffd700;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .fj-wager-form input[type="number"] {
+        width: 100%;
+        padding: 14px;
+        font-size: 1.3rem;
+        border: 2px solid #ffd700;
+        border-radius: 8px;
+        background: #fff;
+        color: #000;
+        text-align: center;
+        margin-bottom: 12px;
+      }
+      .fj-wager-submitted {
+        font-family: "Permanent Marker", cursive;
+        color: #4caf50;
+        font-size: 1.3rem;
+        margin: 20px 0;
+      }
+      .fj-resolve-section {
+        max-width: 400px;
+        margin: 20px auto;
+      }
+      .fj-player-card {
+        background: rgba(255, 215, 0, 0.1);
+        border: 2px solid rgba(255, 215, 0, 0.4);
+        border-radius: 12px;
+        padding: 16px;
+        margin: 10px 0;
+        text-align: center;
+      }
+      .fj-player-card .fj-name {
+        font-family: "Permanent Marker", cursive;
+        font-size: 1.2rem;
+        color: #fff;
+        margin-bottom: 6px;
+      }
+      .fj-player-card .fj-score-info {
+        color: #ccc;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+      .fj-player-card .fj-btns {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .fj-player-card .fj-btns button {
+        padding: 10px 24px;
+        font-size: 1rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .fj-player-card.resolved {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+      .fj-waiting-wagers {
+        font-family: "Permanent Marker", cursive;
+        color: #ffd700;
+        font-size: 1.2rem;
+        animation: pulse 1.5s infinite;
+        margin: 20px 0;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* ---- Game Over ---- */
+      .gameover-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 50, 0.97);
+        z-index: 700;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .gameover-overlay.hidden {
+        display: none;
+      }
+      .gameover-overlay .winner-label {
+        font-family: "Permanent Marker", cursive;
+        color: #fff;
+        font-size: 1.2rem;
+        margin-bottom: 6px;
+      }
+      .gameover-overlay .winner-name {
+        font-family: "Permanent Marker", cursive;
+        color: #ffd700;
+        font-size: 2.6rem;
+        margin-bottom: 4px;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+      }
+      .gameover-overlay .winner-score {
+        font-family: "Permanent Marker", cursive;
+        color: #ffd700;
+        font-size: 1.8rem;
+        margin-bottom: 24px;
+      }
+      .gameover-overlay .final-standings {
+        width: 100%;
+        max-width: 360px;
+        margin-bottom: 24px;
+      }
+      .gameover-overlay .final-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 16px;
+        margin: 4px 0;
+        background: rgba(255, 215, 0, 0.1);
+        border-radius: 8px;
+      }
+
+      /* ---- Voice Detection ---- */
+      .voice-bar {
+        display: none;
+        padding: 6px 12px;
+        background: #000050;
+        border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+        font-size: 0.8rem;
+        color: #ccc;
+        text-align: center;
+        position: sticky;
+        top: 42px;
+        z-index: 99;
+      }
+      .voice-bar.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .voice-bar .mic-icon {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #f44336;
+        animation: micPulse 1s infinite;
+        flex-shrink: 0;
+      }
+      @keyframes micPulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+      .voice-bar .transcript {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80%;
+      }
+      .board .clue-cell.voice-highlight {
+        box-shadow:
+          0 0 0 3px #ffd700,
+          0 0 12px rgba(255, 215, 0, 0.6);
+        animation: voicePulse 0.6s ease-in-out 3;
+      }
+      @keyframes voicePulse {
+        0%,
+        100% {
+          box-shadow:
+            0 0 0 3px #ffd700,
+            0 0 12px rgba(255, 215, 0, 0.6);
+        }
+        50% {
+          box-shadow:
+            0 0 0 5px #ffd700,
+            0 0 20px rgba(255, 215, 0, 0.9);
+        }
+      }
+      .menu-dropdown .voice-toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        color: #fff;
+        font-size: 1rem;
+      }
+      .voice-switch {
+        position: relative;
+        width: 44px;
+        height: 24px;
+      }
+      .voice-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .voice-switch .slider {
+        position: absolute;
+        inset: 0;
+        background: #555;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .voice-switch .slider::before {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.2s;
+      }
+      .voice-switch input:checked + .slider {
+        background: #4caf50;
+      }
+      .voice-switch input:checked + .slider::before {
+        transform: translateX(20px);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (min-width: 500px) {
+        .board .cat-cell {
+          font-size: 0.8rem;
+          min-height: 56px;
+          padding: 8px 4px;
+        }
+        .board .clue-cell {
+          font-size: 1.1rem;
+          min-height: 52px;
+        }
+      }
+      @media (min-width: 700px) {
+        .board {
+          max-width: 800px;
+          gap: 4px;
+        }
+        .board .cat-cell {
+          font-size: 0.95rem;
+          padding: 10px 6px;
+        }
+        .board .clue-cell {
+          font-size: 1.3rem;
+          min-height: 58px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Game background by player count (visible when game board is shown) -->
+    <div id="podium-bg" class="podium-bg podium-bg-1p hidden" aria-hidden="true"></div>
+
+    <div class="game-content-layer">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <span class="room-code" id="top-room-code">----</span>
+      <span class="round-info" id="round-info">Round 1</span>
+      <span class="menu-dots" id="menu-toggle">&#8942;</span>
+      <div class="menu-dropdown" id="menu-dropdown">
+        <div class="voice-toggle-row">
+          <span>Voice Detection (Beta!)/span>
+          <label class="voice-switch"
+            ><input type="checkbox" id="voice-toggle" /><span
+              class="slider"
+            ></span
+          ></label>
+        </div>
+        <button id="menu-categories">Edit Categories</button>
+        <button id="menu-advance">Next Round</button>
+        <button id="menu-skip">Skip Remaining Clues</button>
+        <button id="menu-lobby">Back to Lobby</button>
+      </div>
+    </div>
+
+    <!-- Voice Detection Transcript Bar -->
+    <div class="voice-bar" id="voice-bar">
+      <span class="mic-icon"></span>
+      <span class="transcript" id="voice-transcript">Listening...</span>
+    </div>
+
+    <!-- Category Setup Screen -->
+    <div class="category-setup hidden" id="category-setup">
+      <h2 id="cat-setup-title">Enter Round 1 Categories</h2>
+      <div class="cat-inputs" id="cat-inputs"></div>
+      <button class="btn-gold" id="btn-set-cats">Continue</button>
+      <p style="color: #ccc; font-size: 0.85rem; margin-top: 10px">
+        (Edit the category names if you would like. It does not affect the
+        game.)
+      </p>
+    </div>
+
+    <!-- Logo -->
+    <div id="game-logo" style="text-align: center; padding: 10px 0px;">
+      <img src="/logo.png" alt="Jeopardy!" style="max-width:220px; height:auto;">
+    </div>
+
+    <!-- Game Board -->
+    <div class="board-container hidden" id="board-container">
+      <div class="board" id="board"></div>
+    </div>
+
+    <!-- Final Jeopardy -->
+    <div class="fj-container hidden" id="fj-container"></div>
+
+    <!-- Scoreboard on podium: names in upper screen area, scores below -->
+    <div class="podium-scoreboard-wrap" id="scoreboard">
+      <div class="podium-names-row" id="scoreboard-names"></div>
+      <div class="podium-scores-row" id="scoreboard-scores"></div>
+    </div>
+
+    <!-- End Round Button -->
+    <div id="end-round-container" style="text-align:center; padding:12px 0; background:#000050;">
+      <button class="btn-gold" id="btn-end-round" style="background:transparent; color:#FFD700; border:2px solid #FFD700; font-size:0.95rem; padding:10px 28px;">End Round</button>
+    </div>
+
+    <!-- Clue Resolution Modal -->
+    <div class="modal-overlay hidden" id="clue-modal">
+      <div class="modal" id="clue-modal-content"></div>
+    </div>
+
+    <!-- Round Complete Overlay -->
+    <div class="round-overlay hidden" id="round-overlay">
+      <h2 id="round-overlay-title"></h2>
+      <div class="standings" id="round-standings"></div>
+      <button class="btn-gold" id="btn-next-round"></button>
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div class="gameover-overlay hidden" id="gameover-overlay"></div>
+
+    </div><!-- /.game-content-layer -->
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      (function () {
+        const socket = io();
+
+        const savedCode = sessionStorage.getItem("jeopardyCode");
+        const savedName = sessionStorage.getItem("jeopardyName");
+        const savedHost = sessionStorage.getItem("jeopardyHost") === "true";
+
+        if (!savedCode || !savedName) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        let gameState = null;
+        let myId = null;
+        let pendingClue = null;
+
+        socket.on("connect", () => {
+          myId = socket.id;
+          socket.emit(
+            "join-game",
+            { code: savedCode, playerName: savedName },
+            (res) => {
+              if (res.error) {
+                window.location.href = "index.html";
+                return;
+              }
+              gameState = res.game;
+              gameState.code = savedCode;
+              if (res.game.started) {
+                initGame();
+              }
+            },
+          );
+        });
+
+        socket.on("game-started", ({ game }) => {
+          gameState = { ...game, code: gameState?.code || savedCode };
+          initGame();
+        });
+
+        function initGame() {
+          document.getElementById("top-room-code").textContent =
+            "Room: " + (gameState.code || savedCode);
+          updateRoundInfo();
+          renderScoreboard();
+          if (gameState.round === "final") {
+            document.getElementById("board-container").classList.add("hidden");
+            document.getElementById("category-setup").classList.add("hidden");
+            document.getElementById("game-logo").classList.add("hidden");
+            document.getElementById("podium-bg").classList.add("hidden");
+            document.querySelector(".game-content-layer").classList.remove("board-view");
+            const fj = document.getElementById("fj-container");
+            fj.classList.remove("hidden");
+            fj.innerHTML =
+              '<h2>Final Jeopardy!</h2><p class="fj-sub">Final Jeopardy is in progress. Scores update in real-time below.</p>';
+          } else {
+            showCategorySetup();
+          }
+        }
+
+        function updateRoundInfo() {
+          const r = gameState.round;
+          let text = "Round 1";
+          if (r === 2) text = "Double Jeopardy!";
+          else if (r === "final") text = "Final Jeopardy!";
+          document.getElementById("round-info").textContent = text;
+        }
+
+        function getValues() {
+          if (gameState.round === 1) return [200, 400, 600, 800, 1000];
+          if (gameState.round === 2) return [400, 800, 1200, 1600, 2000];
+          return [];
+        }
+
+        function formatDollars(n) {
+          if (n < 0) return "-$" + Math.abs(n).toLocaleString();
+          return "$" + n.toLocaleString();
+        }
+
+        function updatePodiumBackground() {
+          const el = document.getElementById("podium-bg");
+          if (!el || el.classList.contains("hidden")) return;
+          const n = gameState?.players?.length || 1;
+          const count = Math.min(3, Math.max(1, n));
+          el.classList.remove("podium-bg-1p", "podium-bg-2p", "podium-bg-3p");
+          el.classList.add("podium-bg-" + count + "p");
+        }
+
+        // ---- Scoreboard ----
+        function renderScoreboard() {
+          const namesRow = document.getElementById("scoreboard-names");
+          const scoresRow = document.getElementById("scoreboard-scores");
+          if (!namesRow || !scoresRow) return;
+          namesRow.innerHTML = "";
+          scoresRow.innerHTML = "";
+          if (!gameState?.players) return;
+          updatePodiumBackground();
+          const n = Math.min(3, Math.max(1, gameState.players.length));
+          const layoutClass = "scoreboard-" + n + "p";
+          namesRow.className = "podium-names-row " + layoutClass;
+          scoresRow.className = "podium-scores-row " + layoutClass;
+          gameState.players.forEach((p) => {
+            const nameChip = document.createElement("div");
+            nameChip.className = "podium-name-chip" + (p.id === myId ? " me" : "");
+            nameChip.innerHTML = `<span class="s-name">${esc(p.name)}</span>`;
+            namesRow.appendChild(nameChip);
+
+            const scoreChip = document.createElement("div");
+            scoreChip.className = "podium-score-chip" + (p.id === myId ? " me" : "");
+            scoreChip.innerHTML = `<span class="s-score">${formatDollars(p.score)}</span>`;
+            scoresRow.appendChild(scoreChip);
+          });
+        }
+
+        // ---- Category Setup ----
+        function showCategorySetup() {
+          if (gameState.round === "final") return;
+          const cats = gameState.categories || ["", "", "", "", "", ""];
+          const allSet = cats.every((c) => c && c.trim());
+          if (allSet) {
+            renderBoard();
+            return;
+          }
+
+          const title =
+            gameState.round === 2
+              ? "Enter Double Jeopardy! Categories"
+              : "Enter Round 1 Categories";
+          document.getElementById("cat-setup-title").textContent = title;
+
+          const container = document.getElementById("cat-inputs");
+          container.innerHTML = "";
+          for (let i = 0; i < 6; i++) {
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.placeholder = "Category " + (i + 1);
+            inp.value = cats[i] || "";
+            inp.maxLength = 30;
+            inp.id = "cat-input-" + i;
+            container.appendChild(inp);
+          }
+
+          document.getElementById("category-setup").classList.remove("hidden");
+          document.getElementById("board-container").classList.add("hidden");
+          document.getElementById("fj-container").classList.add("hidden");
+          document.getElementById("scoreboard").classList.add("hidden");
+          document.getElementById("end-round-container").classList.add("hidden");
+          document.getElementById("game-logo").classList.add("hidden");
+          document.getElementById("podium-bg").classList.add("hidden");
+          document.querySelector(".game-content-layer").classList.remove("board-view");
+        }
+
+        document
+          .getElementById("btn-set-cats")
+          .addEventListener("click", () => {
+            const cats = [];
+            for (let i = 0; i < 6; i++) {
+              const val = document
+                .getElementById("cat-input-" + i)
+                .value.trim();
+              cats.push(val || "Category " + (i + 1));
+            }
+            socket.emit("set-categories", { categories: cats });
+          });
+
+        socket.on("categories-updated", ({ categories }) => {
+          gameState.categories = categories;
+          renderBoard();
+        });
+
+        // ---- Game Board ----
+        function renderBoard() {
+          document.getElementById("category-setup").classList.add("hidden");
+          document.getElementById("fj-container").classList.add("hidden");
+          document.getElementById("scoreboard").classList.remove("hidden");
+          document.getElementById("end-round-container").classList.remove("hidden");
+          document.getElementById("game-logo").classList.remove("hidden");
+          const podiumEl = document.getElementById("podium-bg");
+          podiumEl.classList.remove("hidden");
+          updatePodiumBackground();
+          document.querySelector(".game-content-layer").classList.add("board-view");
+          const boardContainer = document.getElementById("board-container");
+          boardContainer.classList.remove("hidden");
+
+          const board = document.getElementById("board");
+          board.innerHTML = "";
+
+          const cats = gameState.categories;
+          const values = getValues();
+
+          for (let c = 0; c < 6; c++) {
+            const cell = document.createElement("div");
+            cell.className = "cat-cell";
+            cell.textContent = cats[c] || "???";
+            board.appendChild(cell);
+          }
+
+          for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 6; c++) {
+              const cell = document.createElement("div");
+              cell.className = "clue-cell";
+              cell.dataset.col = c;
+              cell.dataset.row = r;
+              cell.textContent = "$" + values[r].toLocaleString();
+              if (!gameState.board[`${c}-${r}`]) {
+                cell.classList.add("used");
+              }
+              cell.addEventListener("click", () => onClueClick(c, r));
+              board.appendChild(cell);
+            }
+          }
+        }
+
+        function onClueClick(col, row) {
+          if (!gameState.board[`${col}-${row}`]) return;
+          socket.emit("select-clue", { col, row });
+        }
+
+        socket.on("clue-claimed", ({ col, row, claimedBy, board }) => {
+          gameState.board = board;
+          const cell = document.querySelector(
+            `.clue-cell[data-col="${col}"][data-row="${row}"]`,
+          );
+          if (cell) {
+            cell.classList.add("claiming");
+            setTimeout(() => cell.classList.add("used"), 400);
+          }
+          if (claimedBy === myId) {
+            pendingClue = { col, row };
+            showClueModal(col, row);
+          }
+        });
+
+        // ---- Clue Resolution Modal ----
+        function showClueModal(col, row) {
+          const values = getValues();
+          const value = values[row];
+          const catName = gameState.categories[col] || "???";
+          const modal = document.getElementById("clue-modal-content");
+
+          // Step 1: Did the user who clicked answer correctly? (or Daily Double)
+          const claimer = gameState.players.find((p) => p.id === myId);
+          const claimerName = claimer ? claimer.name : "This player";
+
+          function showStep1() {
+            let html = `<h3>${esc(catName)}</h3>`;
+            html += `<div class="modal-sub">${formatDollars(value)}</div>`;
+            html += `<div class="modal-sub">Did ${esc(claimerName)} answer this correctly?</div>`;
+            html += `<div class="dd-btns" style="margin-top:14px;">`;
+            html += `<button class="btn-correct" id="clue-yes">Yes</button>`;
+            html += `<button class="btn-incorrect" id="clue-no">No</button>`;
+            html += `</div>`;
+            html += `<div style="margin-top:14px;"><button class="player-btn" id="btn-dd-start" style="border-color:#f44336;color:#f44336;">Daily Double</button></div>`;
+            modal.innerHTML = html;
+
+            document.getElementById("clue-yes").addEventListener("click", () => {
+              socket.emit("resolve-clue", { col, row, awardTo: myId, isDailyDouble: false, isCorrect: true });
+              hideClueModal();
+            });
+            document.getElementById("clue-no").addEventListener("click", () => {
+              socket.emit("resolve-clue", { col, row, awardTo: myId, isDailyDouble: false, isCorrect: false });
+              hideClueModal();
+            });
+
+            document.getElementById("btn-dd-start").addEventListener("click", () => {
+              showDDStep1();
+            });
+          }
+
+          // DD Step 1: Which player found it?
+          function showDDStep1() {
+            let html = `<h3>Daily Double!</h3>`;
+            html += `<div class="modal-sub">${esc(catName)} &mdash; ${formatDollars(value)}</div>`;
+            html += `<div class="modal-sub">Which player found it?</div>`;
+            gameState.players.forEach((p) => {
+              html += `<button class="player-btn" data-pid="${p.id}">${esc(p.name)}</button>`;
+            });
+            modal.innerHTML = html;
+
+            modal.querySelectorAll(".player-btn").forEach((btn) => {
+              btn.addEventListener("click", () => {
+                const pid = btn.dataset.pid;
+                const player = gameState.players.find((p) => p.id === pid);
+                showDDStep2(pid, player);
+              });
+            });
+          }
+
+          // DD Step 2: Enter wager
+          function showDDStep2(pid, player) {
+            const maxWager = Math.max(player?.score || 0, value);
+            let html = `<h3>Daily Double!</h3>`;
+            html += `<div class="modal-sub">${esc(player?.name || '???')}'s wager</div>`;
+            html += `<div class="modal-sub" style="font-size:0.85rem;color:#aaa;">Score: ${formatDollars(player?.score || 0)} &mdash; Max wager: ${formatDollars(maxWager)}</div>`;
+            html += `<div class="dd-section">`;
+            html += `<label>Wager Amount</label>`;
+            html += `<input type="number" id="dd-wager" min="0" max="${maxWager}" value="0" placeholder="Enter wager">`;
+            html += `<button class="btn-gold" id="dd-wager-submit" style="margin-top:10px;width:100%;">Submit Wager</button>`;
+            html += `</div>`;
+            modal.innerHTML = html;
+
+            document.getElementById("dd-wager-submit").addEventListener("click", () => {
+              let wager = parseInt(document.getElementById("dd-wager").value) || 0;
+              wager = Math.max(0, Math.min(wager, maxWager));
+              showDDStep3(pid, player, wager);
+            });
+          }
+
+          // DD Step 3: Correct or incorrect?
+          function showDDStep3(pid, player, wager) {
+            let html = `<h3>Daily Double!</h3>`;
+            html += `<div class="modal-sub">${esc(player?.name || '???')} wagered ${formatDollars(wager)}</div>`;
+            html += `<div class="modal-sub">Did they answer correctly?</div>`;
+            html += `<div class="dd-btns">`;
+            html += `<button class="btn-correct" id="dd-correct">Correct</button>`;
+            html += `<button class="btn-incorrect" id="dd-incorrect">Incorrect</button>`;
+            html += `</div>`;
+            modal.innerHTML = html;
+
+            document.getElementById("dd-correct").addEventListener("click", () => {
+              socket.emit("resolve-clue", { col, row, awardTo: pid, isDailyDouble: true, wager, isCorrect: true });
+              hideClueModal();
+            });
+            document.getElementById("dd-incorrect").addEventListener("click", () => {
+              socket.emit("resolve-clue", { col, row, awardTo: pid, isDailyDouble: true, wager, isCorrect: false });
+              hideClueModal();
+            });
+          }
+
+          document.getElementById("clue-modal").classList.remove("hidden");
+          showStep1();
+        }
+
+        function hideClueModal() {
+          document.getElementById("clue-modal").classList.add("hidden");
+          pendingClue = null;
+        }
+
+        socket.on("clue-resolved", ({ col, row, players, board }) => {
+          gameState.players = players;
+          gameState.board = board;
+          renderScoreboard();
+          const cell = document.querySelector(
+            `.clue-cell[data-col="${col}"][data-row="${row}"]`,
+          );
+          if (cell) cell.classList.add("used");
+        });
+
+        // ---- Round Complete ----
+        socket.on("round-complete", ({ round, players }) => {
+          gameState.players = players;
+          renderScoreboard();
+
+          const overlay = document.getElementById("round-overlay");
+          const title = document.getElementById("round-overlay-title");
+          const standings = document.getElementById("round-standings");
+          const btn = document.getElementById("btn-next-round");
+
+          if (round === 1) {
+            title.textContent = "Round 1 Complete!";
+            btn.textContent = "Start Double Jeopardy!";
+          } else {
+            title.textContent = "Double Jeopardy! Complete!";
+            btn.textContent = "Start Final Jeopardy!";
+          }
+
+          standings.innerHTML = "";
+          [...players]
+            .sort((a, b) => b.score - a.score)
+            .forEach((p) => {
+              const row = document.createElement("div");
+              row.className = "standing-row";
+              row.innerHTML = `<span class="st-name">${esc(p.name)}</span><span class="st-score">${formatDollars(p.score)}</span>`;
+              standings.appendChild(row);
+            });
+
+          overlay.classList.remove("hidden");
+        });
+
+        document
+          .getElementById("btn-next-round")
+          .addEventListener("click", () => {
+            document.getElementById("round-overlay").classList.add("hidden");
+            socket.emit("advance-round");
+          });
+
+        socket.on("new-round", ({ game }) => {
+          gameState = { ...game, code: gameState.code };
+          updateRoundInfo();
+          renderScoreboard();
+          showCategorySetup();
+        });
+
+        // ---- Final Jeopardy ----
+        socket.on("final-jeopardy", ({ players, qualified }) => {
+          gameState.players = players;
+          gameState.round = "final";
+          updateRoundInfo();
+          renderScoreboard();
+
+          document.getElementById("board-container").classList.add("hidden");
+          document.getElementById("category-setup").classList.add("hidden");
+          document.getElementById("round-overlay").classList.add("hidden");
+          document.getElementById("end-round-container").classList.add("hidden");
+          document.getElementById("game-logo").classList.add("hidden");
+          document.getElementById("podium-bg").classList.add("hidden");
+          document.querySelector(".game-content-layer").classList.remove("board-view");
+
+          const fj = document.getElementById("fj-container");
+          fj.classList.remove("hidden");
+
+          // Build the queue of players this client needs to submit wagers for
+          const wagerQueue = [];
+          if (qualified.includes(myId)) {
+            const me = players.find(p => p.id === myId);
+            if (me) wagerQueue.push({ id: me.id, name: me.name, score: me.score, isLocal: false });
+          }
+          const myLocalPlayers = players.filter(p => p.local && p.owner === myId && qualified.includes(p.id));
+          myLocalPlayers.forEach(lp => {
+            wagerQueue.push({ id: lp.id, name: lp.name, score: lp.score, isLocal: true });
+          });
+
+          let queueIndex = 0;
+
+          function showNextWagerForm() {
+            if (queueIndex >= wagerQueue.length) {
+              fj.innerHTML = `<h2>Final Jeopardy!</h2><p class="fj-wager-submitted">All wagers submitted!</p><p class="fj-waiting-wagers">Waiting for other players...</p>`;
+              return;
+            }
+
+            const current = wagerQueue[queueIndex];
+            const maxWager = current.score;
+            const label = current.isLocal ? `${esc(current.name)}'s Wager` : "Enter Your Wager";
+            const scoreLabel = current.isLocal ? `${esc(current.name)}'s score` : "Your score";
+
+            let html = `<h2>Final Jeopardy!</h2>`;
+            html += `<p class="fj-sub">${scoreLabel}: ${formatDollars(maxWager)}</p>`;
+            if (wagerQueue.length > 1) {
+              html += `<p class="fj-sub" style="font-size:0.85rem; color:#aaa;">Player ${queueIndex + 1} of ${wagerQueue.length}</p>`;
+            }
+            html += `<div class="fj-wager-form">`;
+            html += `<label>${label}</label>`;
+            html += `<input type="number" id="fj-wager-input" min="0" max="${maxWager}" value="${maxWager}" onfocus="if(this.value==='${maxWager}')this.value=''">`;
+            html += `<div id="fj-wager-error" style="display:none; color:#f44336; font-size:0.95rem; margin:8px 0; font-weight:bold;"></div>`;
+            html += `<button class="btn-gold" id="btn-submit-wager">Submit Wager</button>`;
+            html += `</div>`;
+
+            fj.innerHTML = html;
+
+            document.getElementById("btn-submit-wager").addEventListener("click", () => {
+              const wager = parseInt(document.getElementById("fj-wager-input").value) || 0;
+              const errorEl = document.getElementById("fj-wager-error");
+              if (wager < 0) {
+                errorEl.textContent = "Negative values are not allowed!";
+                errorEl.style.display = "block";
+                return;
+              }
+              if (wager > maxWager) {
+                errorEl.textContent = "That is over the amount you have!";
+                errorEl.style.display = "block";
+                return;
+              }
+              errorEl.style.display = "none";
+
+              if (current.isLocal) {
+                socket.emit("submit-wager", { wager, playerId: current.id });
+              } else {
+                socket.emit("submit-wager", { wager });
+              }
+
+              queueIndex++;
+              showNextWagerForm();
+            });
+          }
+
+          if (wagerQueue.length > 0) {
+            showNextWagerForm();
+          } else {
+            fj.innerHTML = `<h2>Final Jeopardy!</h2><p class="fj-sub">You did not qualify for Final Jeopardy.</p><p class="fj-waiting-wagers">Waiting for other players...</p>`;
+          }
+        });
+
+        socket.on("wager-received", ({ playerId }) => {
+          // Could show a checkmark next to this player
+        });
+
+        socket.on("all-wagers-in", ({ players, wagers }) => {
+          gameState.players = players;
+          renderScoreboard();
+
+          const fj = document.getElementById("fj-container");
+          fj.innerHTML = "";
+
+          let html = `<h2>Final Jeopardy!</h2>`;
+          html += `<p class="fj-sub">All wagers are in! Watch the clue on TV, then mark each player.</p>`;
+          html += `<div class="fj-resolve-section">`;
+
+          const qualified = players.filter((p) => p.score > 0);
+          qualified.forEach((p) => {
+            const w = wagers?.[p.id] || 0;
+            html += `<div class="fj-player-card" id="fj-card-${p.id}">`;
+            html += `<div class="fj-name">${esc(p.name)}</div>`;
+            html += `<div class="fj-score-info">Score: ${formatDollars(p.score)}</div>`;
+            html += `<div class="fj-score-info" style="color:#FFD700;">Wager: ${formatDollars(w)}</div>`;
+            html += `<div class="fj-btns">`;
+            html += `<button class="btn-correct" onclick="resolveFinal('${p.id}', true)">Correct</button>`;
+            html += `<button class="btn-incorrect" onclick="resolveFinal('${p.id}', false)">Incorrect</button>`;
+            html += `</div></div>`;
+          });
+
+          html += `</div>`;
+          fj.innerHTML = html;
+        });
+
+        window.resolveFinal = function (playerId, correct) {
+          socket.emit("resolve-final", { playerId, correct });
+          const card = document.getElementById("fj-card-" + playerId);
+          if (card) card.classList.add("resolved");
+        };
+
+        socket.on(
+          "final-player-resolved",
+          ({ playerId, correct, wager, players }) => {
+            gameState.players = players;
+            renderScoreboard();
+            const card = document.getElementById("fj-card-" + playerId);
+            if (card) {
+              card.classList.add("resolved");
+              const info = card.querySelector(".fj-score-info");
+              const p = players.find((pp) => pp.id === playerId);
+              if (info && p) {
+                info.textContent = `${correct ? "+" : "-"}${formatDollars(wager)} → ${formatDollars(p.score)}`;
+              }
+            }
+          },
+        );
+
+        // ---- Game Over ----
+        socket.on("game-over", ({ players }) => {
+          gameState.players = players;
+          renderScoreboard();
+
+          const sorted = [...players].sort((a, b) => b.score - a.score);
+          const winner = sorted[0];
+
+          const overlay = document.getElementById("gameover-overlay");
+          let html = `<div class="winner-label">The Winner Is</div>`;
+          html += `<div class="winner-name">${esc(winner.name)}</div>`;
+          html += `<div class="winner-score">${formatDollars(winner.score)}</div>`;
+          html += `<div class="final-standings">`;
+          sorted.forEach((p, i) => {
+            html += `<div class="final-row"><span>${i + 1}. ${esc(p.name)}</span><span style="color:#FFD700;font-family:'Permanent Marker',cursive;">${formatDollars(p.score)}</span></div>`;
+          });
+          html += `</div>`;
+          html += `<button class="btn-gold" onclick="window.location.href='index.html'">New Game</button>`;
+          overlay.innerHTML = html;
+          overlay.classList.remove("hidden");
+        });
+
+        // ---- Player Updates ----
+        socket.on("player-update", ({ players }) => {
+          gameState.players = players;
+          renderScoreboard();
+        });
+
+        socket.on("score-update", ({ players }) => {
+          gameState.players = players;
+          renderScoreboard();
+        });
+
+        socket.on("player-disconnected", ({ playerId }) => {
+          // Visual indicator could be added
+        });
+
+        // ---- Menu ----
+        document
+          .getElementById("menu-toggle")
+          .addEventListener("click", (e) => {
+            e.stopPropagation();
+            document.getElementById("menu-dropdown").classList.toggle("open");
+          });
+        document.addEventListener("click", () => {
+          document.getElementById("menu-dropdown").classList.remove("open");
+        });
+
+        document
+          .getElementById("menu-categories")
+          .addEventListener("click", () => {
+            document.getElementById("menu-dropdown").classList.remove("open");
+            if (gameState.round === "final") return;
+            gameState.categories = ["", "", "", "", "", ""];
+            showCategorySetup();
+          });
+
+        document
+          .getElementById("menu-advance")
+          .addEventListener("click", () => {
+            document.getElementById("menu-dropdown").classList.remove("open");
+            socket.emit("advance-round");
+          });
+
+        document.getElementById("btn-end-round").addEventListener("click", () => {
+          socket.emit("advance-round");
+        });
+
+        document.getElementById("menu-skip").addEventListener("click", () => {
+          document.getElementById("menu-dropdown").classList.remove("open");
+          if (!gameState?.board) return;
+          Object.keys(gameState.board).forEach((key) => {
+            if (gameState.board[key]) {
+              const [c, r] = key.split("-").map(Number);
+              socket.emit("skip-clue", { col: c, row: r });
+            }
+          });
+        });
+
+        document.getElementById("menu-lobby").addEventListener("click", () => {
+          sessionStorage.clear();
+          window.location.href = "index.html";
+        });
+
+        // ---- Voice Detection (Experimental) ----
+        const SpeechRecognition =
+          window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let voiceEnabled = false;
+        let voiceRestarting = false;
+
+        const voiceToggle = document.getElementById("voice-toggle");
+        const voiceBar = document.getElementById("voice-bar");
+        const voiceTranscript = document.getElementById("voice-transcript");
+
+        // Dollar amount patterns to listen for
+        const dollarPatterns = {
+          200: [/\b200\b/, /\btwo hundred\b/],
+          400: [/\b400\b/, /\bfour hundred\b/],
+          600: [/\b600\b/, /\bsix hundred\b/],
+          800: [/\b800\b/, /\beight hundred\b/],
+          1000: [/\b1000\b/, /\bthousand\b/, /\bone thousand\b/],
+          1200: [/\b1200\b/, /\btwelve hundred\b/],
+          1600: [/\b1600\b/, /\bsixteen hundred\b/],
+          2000: [/\b2000\b/, /\btwo thousand\b/],
+        };
+
+        voiceToggle.addEventListener("change", function () {
+          if (this.checked) {
+            startVoice();
+          } else {
+            stopVoice();
+          }
+        });
+
+        function startVoice() {
+          if (!SpeechRecognition) {
+            alert(
+              "Speech recognition is not supported in this browser. Try Chrome on Android.",
+            );
+            voiceToggle.checked = false;
+            return;
+          }
+          voiceEnabled = true;
+          recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = "en-US";
+
+          recognition.onstart = () => {
+            voiceBar.classList.add("active");
+            voiceTranscript.textContent = "Listening...";
+            voiceRestarting = false;
+          };
+
+          recognition.onresult = (event) => {
+            let interimText = "";
+            let finalText = "";
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const t = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                finalText += t;
+              } else {
+                interimText += t;
+              }
+            }
+            const display = (finalText || interimText).trim();
+            if (display) {
+              voiceTranscript.textContent = display;
+              matchVoiceToBoard(display.toLowerCase());
+            }
+          };
+
+          recognition.onerror = (event) => {
+            if (event.error === "no-speech" || event.error === "aborted") {
+              restartVoice();
+            } else {
+              voiceTranscript.textContent = "Mic error: " + event.error;
+            }
+          };
+
+          recognition.onend = () => {
+            if (voiceEnabled && !voiceRestarting) {
+              restartVoice();
+            }
+          };
+
+          try {
+            recognition.start();
+          } catch (e) {
+            voiceTranscript.textContent = "Could not start mic";
+          }
+        }
+
+        function restartVoice() {
+          if (!voiceEnabled || voiceRestarting) return;
+          voiceRestarting = true;
+          setTimeout(() => {
+            if (voiceEnabled && recognition) {
+              try {
+                recognition.start();
+              } catch (e) {}
+            }
+          }, 300);
+        }
+
+        function stopVoice() {
+          voiceEnabled = false;
+          if (recognition) {
+            try {
+              recognition.stop();
+            } catch (e) {}
+            recognition = null;
+          }
+          voiceBar.classList.remove("active");
+          clearVoiceHighlights();
+        }
+
+        function matchVoiceToBoard(text) {
+          if (!gameState?.board) return;
+          const values = getValues();
+          clearVoiceHighlights();
+
+          let matchedRow = -1;
+          for (let r = 0; r < values.length; r++) {
+            const v = String(values[r]);
+            const patterns = dollarPatterns[v];
+            if (patterns && patterns.some((p) => p.test(text))) {
+              matchedRow = r;
+              break;
+            }
+          }
+
+          if (matchedRow >= 0) {
+            // Highlight all available cells in that row
+            for (let c = 0; c < 6; c++) {
+              if (gameState.board[`${c}-${matchedRow}`]) {
+                const cell = document.querySelector(
+                  `.clue-cell[data-col="${c}"][data-row="${matchedRow}"]`,
+                );
+                if (cell && !cell.classList.contains("used")) {
+                  cell.classList.add("voice-highlight");
+                }
+              }
+            }
+            // Auto-clear highlight after 4 seconds
+            setTimeout(clearVoiceHighlights, 4000);
+          }
+        }
+
+        function clearVoiceHighlights() {
+          document
+            .querySelectorAll(".clue-cell.voice-highlight")
+            .forEach((c) => c.classList.remove("voice-highlight"));
+        }
+
+        // ---- Utility ----
+        function esc(s) {
+          const d = document.createElement("div");
+          d.textContent = s;
+          return d.innerHTML;
+        }
+      })();
+    </script>
+  </body>
+</html>

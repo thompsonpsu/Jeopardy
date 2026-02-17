@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Jeopardy! Play Along</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: linear-gradient(135deg, #000074 0%, #060CE9 50%, #000074 100%);
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .logo {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 2.8rem;
+            color: #FFD700;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            text-align: center;
+            margin: 30px 0 10px;
+            letter-spacing: 2px;
+        }
+        .subtitle {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.2rem;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        .card {
+            background: rgba(0,0,80,0.7);
+            border: 2px solid #FFD700;
+            border-radius: 16px;
+            padding: 30px 24px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin: 10px 0;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.4rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .menu-btn:active { transform: scale(0.97); }
+        .btn-host {
+            background: #FFD700;
+            color: #000074;
+        }
+        .btn-join {
+            background: #fff;
+            color: #000074;
+        }
+        .btn-start {
+            background: #4CAF50;
+            color: #fff;
+        }
+        .btn-back {
+            background: transparent;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            font-size: 1rem;
+            padding: 10px;
+            margin-top: 16px;
+        }
+        label {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 6px;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1rem;
+            border: 2px solid #FFD700;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.95);
+            color: #000;
+            text-align: center;
+            margin-bottom: 16px;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: #fff; }
+        input[type="text"]::placeholder { color: #999; }
+        .room-code {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 3rem;
+            color: #FFD700;
+            text-align: center;
+            letter-spacing: 8px;
+            margin: 16px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+        }
+        .room-label {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-bottom: 4px;
+        }
+        .player-list {
+            margin: 16px 0;
+            padding: 0;
+            list-style: none;
+        }
+        .player-list li {
+            padding: 10px 16px;
+            margin: 6px 0;
+            background: rgba(255,215,0,0.15);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 8px;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .player-list li .host-badge {
+            background: #FFD700;
+            color: #000074;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .error-msg {
+            background: rgba(255,60,60,0.2);
+            border: 1px solid #ff4444;
+            color: #ff6666;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+        .waiting {
+            text-align: center;
+            color: #FFD700;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.2rem;
+            animation: pulse 1.5s infinite;
+            margin: 10px 0;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .btn-share {
+            background: transparent;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-share svg { fill: #FFD700; width: 18px; height: 18px; }
+        .share-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .share-toast.show { opacity: 1; }
+        .hidden { display: none !important; }
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255,215,0,0.3);
+            margin: 20px 0;
+        }
+        .instructions {
+            margin-top: 30px;
+            text-align: center;
+            max-width: 420px;
+        }
+        .instructions summary {
+            font-family: 'Permanent Marker', cursive;
+            color: #FFD700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 10px;
+        }
+        .instructions p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #ccc;
+            margin-top: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">JEOPARDY!</div>
+    <div class="subtitle">Play Along</div>
+
+    <!-- Main Menu -->
+    <div class="card" id="view-menu">
+        <button class="menu-btn btn-host" onclick="showView('host-name')">Host a Game</button>
+        <button class="menu-btn btn-join" onclick="showView('join')">Join a Game</button>
+    </div>
+
+    <!-- Host: Enter Name -->
+    <div class="card hidden" id="view-host-name">
+        <label for="host-name-input">Your Name</label>
+        <input type="text" id="host-name-input" placeholder="Enter your name" maxlength="20" autocomplete="off">
+        <button class="menu-btn btn-host" id="btn-create">Create Game</button>
+        <div id="host-error" class="error-msg hidden"></div>
+        <button class="menu-btn btn-back" onclick="showView('menu')">Back</button>
+    </div>
+
+    <!-- Host: Lobby -->
+    <div class="card hidden" id="view-host-lobby">
+        <div class="room-label">Room Code</div>
+        <div class="room-code" id="display-room-code">----</div>
+        <hr class="divider">
+        <label>Players Joined</label>
+        <ul class="player-list" id="host-player-list"></ul>
+        <button class="menu-btn btn-share" id="btn-share"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg> Share Link</button>
+        <button class="menu-btn btn-share" id="btn-copy-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Copy Link</button>
+        <div id="add-user-section" style="margin:10px 0;">
+            <button class="menu-btn btn-share" id="btn-add-user-toggle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> Add User</button>
+            <div id="add-user-form" class="hidden" style="display:none; margin-top:8px;">
+                <input type="text" id="add-user-name" placeholder="Enter player name" maxlength="20" autocomplete="off" style="margin-bottom:8px;">
+                <button class="menu-btn btn-host" id="btn-add-user-confirm" style="font-size:1rem; padding:12px;">Add Player</button>
+                <div id="add-user-error" class="error-msg hidden"></div>
+            </div>
+        </div>
+        <button class="menu-btn btn-start" id="btn-start-game">Start Game</button>
+    </div>
+
+    <!-- Join: Enter Code + Name -->
+    <div class="card hidden" id="view-join">
+        <label for="join-code-input">Room Code</label>
+        <input type="text" id="join-code-input" placeholder="e.g. AB3K" maxlength="4" autocomplete="off" style="text-transform:uppercase; letter-spacing:4px; font-size:1.4rem;">
+        <label for="join-name-input">Your Name</label>
+        <input type="text" id="join-name-input" placeholder="Enter your name" maxlength="20" autocomplete="off">
+        <button class="menu-btn btn-join" id="btn-join">Join Game</button>
+        <div id="join-error" class="error-msg hidden"></div>
+        <button class="menu-btn btn-back" onclick="showView('menu')">Back</button>
+    </div>
+
+    <!-- Join: Lobby (waiting) -->
+    <div class="card hidden" id="view-join-lobby">
+        <div class="room-label">Room Code</div>
+        <div class="room-code" id="display-join-code">----</div>
+        <hr class="divider">
+        <label>Players</label>
+        <ul class="player-list" id="join-player-list"></ul>
+        <div class="waiting">Waiting for host to start...</div>
+    </div>
+
+    <details class="instructions">
+        <summary>How to Play</summary>
+        <p>
+            1. One person <b>hosts</b> the game and shares the 4-letter room code.<br><br>
+            2. Everyone else <b>joins</b> using the room code and their name.<br><br>
+            3. Watch Jeopardy! live on TV together.<br><br>
+            4. When a clue is answered (or time expires), tap the matching cell on the board.<br><br>
+            5. Select which player answered correctly to award them points.<br><br>
+            6. Play through Round 1, Round 2 (Double Jeopardy!), and Final Jeopardy!
+        </p>
+    </details>
+
+    <div class="share-toast" id="share-toast">Link copied to clipboard!</div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentView = 'menu';
+        let gameCode = '';
+        let hostName = '';
+        let isHost = false;
+        let shareBaseUrl = null;
+
+        async function getShareJoinUrl() {
+            if (!shareBaseUrl) {
+                try {
+                    const r = await fetch('/api/share-base-url');
+                    const d = await r.json();
+                    shareBaseUrl = d.url;
+                } catch (e) {
+                    shareBaseUrl = window.location.origin;
+                }
+            }
+            return shareBaseUrl + '/?room=' + gameCode;
+        }
+
+        // Auto-detect room code from URL (e.g. ?room=ZCNG)
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomFromUrl = (urlParams.get('room') || '').toUpperCase().trim();
+        if (roomFromUrl && roomFromUrl.length === 4) {
+            setTimeout(() => {
+                document.getElementById('join-code-input').value = roomFromUrl;
+                document.getElementById('join-name-input').focus();
+                showView('join');
+            }, 0);
+        }
+
+        function showView(view) {
+            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
+            const el = document.getElementById('view-' + view);
+            if (el) el.classList.remove('hidden');
+            currentView = view;
+            document.querySelectorAll('.error-msg').forEach(e => e.classList.add('hidden'));
+        }
+
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        function renderPlayerList(listId, players, hostId) {
+            const ul = document.getElementById(listId);
+            ul.innerHTML = '';
+            players.forEach(p => {
+                const li = document.createElement('li');
+                li.textContent = p.name;
+                if (p.id === hostId) {
+                    const badge = document.createElement('span');
+                    badge.className = 'host-badge';
+                    badge.textContent = 'HOST';
+                    li.appendChild(badge);
+                }
+                if (p.local) {
+                    const badge = document.createElement('span');
+                    badge.className = 'host-badge';
+                    badge.style.background = '#555';
+                    badge.textContent = 'LOCAL';
+                    li.appendChild(badge);
+                }
+                ul.appendChild(li);
+            });
+        }
+
+        // Host: Create Game
+        document.getElementById('btn-create').addEventListener('click', () => {
+            const name = document.getElementById('host-name-input').value.trim() || 'Host';
+            socket.emit('create-game', { playerName: name }, (res) => {
+                if (res.error) return showError('host-error', res.error);
+                gameCode = res.code;
+                hostName = name;
+                isHost = true;
+                sessionStorage.setItem('jeopardyCode', gameCode);
+                sessionStorage.setItem('jeopardyName', name);
+                sessionStorage.setItem('jeopardyHost', 'true');
+                document.getElementById('display-room-code').textContent = gameCode;
+                renderPlayerList('host-player-list', res.game.players, res.game.host);
+                showView('host-lobby');
+            });
+        });
+
+        // Join: Join Game
+        document.getElementById('btn-join').addEventListener('click', () => {
+            const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+            const name = document.getElementById('join-name-input').value.trim();
+            if (!code || code.length !== 4) return showError('join-error', 'Enter a 4-letter room code.');
+            if (!name) return showError('join-error', 'Please enter your name.');
+            socket.emit('join-game', { code, playerName: name }, (res) => {
+                if (res.error) return showError('join-error', res.error);
+                gameCode = code;
+                isHost = false;
+                sessionStorage.setItem('jeopardyCode', code);
+                sessionStorage.setItem('jeopardyName', name);
+                sessionStorage.setItem('jeopardyHost', 'false');
+                if (res.game.started || res.reconnected) {
+                    window.location.href = 'game.html';
+                    return;
+                }
+                document.getElementById('display-join-code').textContent = code;
+                renderPlayerList('join-player-list', res.game.players, res.game.host);
+                showView('join-lobby');
+            });
+        });
+
+        // Share Link (native share sheet) - uses network URL so other devices can join
+        document.getElementById('btn-share').addEventListener('click', () => {
+            getShareJoinUrl().then((joinUrl) => {
+                const message = `${hostName} has invited you to play Jeopardy!`;
+                if (navigator.share) {
+                    navigator.share({ title: 'Jeopardy! Play Along', text: message, url: joinUrl }).catch(() => {});
+                } else {
+                    const fullText = message + '\n' + joinUrl;
+                    navigator.clipboard.writeText(fullText).then(() => {
+                        const toast = document.getElementById('share-toast');
+                        toast.classList.add('show');
+                        setTimeout(() => toast.classList.remove('show'), 2000);
+                    }).catch(() => {
+                        prompt('Copy this link to share:', fullText);
+                    });
+                }
+            });
+        });
+
+        // Copy Link (just the URL to clipboard) - uses network URL so other devices can join
+        document.getElementById('btn-copy-link').addEventListener('click', () => {
+            getShareJoinUrl().then((joinUrl) => {
+                navigator.clipboard.writeText(joinUrl).then(() => {
+                    const toast = document.getElementById('share-toast');
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2000);
+                }).catch(() => {
+                    prompt('Copy this link:', joinUrl);
+                });
+            });
+        });
+
+        // Add User (local player managed by host)
+        document.getElementById('btn-add-user-toggle').addEventListener('click', () => {
+            const form = document.getElementById('add-user-form');
+            const isVisible = form.style.display !== 'none';
+            form.style.display = isVisible ? 'none' : 'block';
+            form.classList.toggle('hidden', isVisible);
+            if (!isVisible) document.getElementById('add-user-name').focus();
+        });
+
+        document.getElementById('btn-add-user-confirm').addEventListener('click', () => {
+            const nameInput = document.getElementById('add-user-name');
+            const name = nameInput.value.trim();
+            if (!name) {
+                showError('add-user-error', 'Please enter a name.');
+                return;
+            }
+            socket.emit('add-local-player', { playerName: name }, (res) => {
+                if (res.error) return showError('add-user-error', res.error);
+                nameInput.value = '';
+                document.getElementById('add-user-form').style.display = 'none';
+                document.querySelectorAll('.error-msg').forEach(e => e.classList.add('hidden'));
+            });
+        });
+
+        document.getElementById('add-user-name').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('btn-add-user-confirm').click();
+        });
+
+        // Start Game (host only)
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            socket.emit('start-game');
+        });
+
+        // Real-time updates
+        socket.on('player-update', ({ players }) => {
+            if (currentView === 'host-lobby') {
+                renderPlayerList('host-player-list', players, socket.id);
+            } else if (currentView === 'join-lobby') {
+                const hostId = players[0]?.id;
+                renderPlayerList('join-player-list', players, hostId);
+            }
+        });
+
+        socket.on('game-started', () => {
+            window.location.href = 'game.html';
+        });
+
+        // Enter key support
+        document.getElementById('host-name-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('btn-create').click();
+        });
+        document.getElementById('join-code-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('join-name-input').focus();
+        });
+        document.getElementById('join-name-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('btn-join').click();
+        });
+    </script>
+</body>
+</html>
