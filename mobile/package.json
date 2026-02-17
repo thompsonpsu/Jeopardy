@@ -1,0 +1,16 @@
+{
+  "name": "jeopardy-play-along",
+  "version": "1.0.0",
+  "description": "Multiplayer Jeopardy! play-along mobile web app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.8.0"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.0"
+  }
+}
